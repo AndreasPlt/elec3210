@@ -27,5 +27,15 @@ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
         return nearest_point;
     }
 
-
+icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
+    // determine corresponding points
+    
+    // weight/reject pairs
+    // compute translation and rotation
+    // apply R and t to all points
+    // compute error
+    // check convergence (error > threshold)
+        // if not converged, repeat
+    // output final alignment
+}
 #endif

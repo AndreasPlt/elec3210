@@ -1,13 +1,20 @@
 #ifndef ICP_IMPL_H
 #define ICP_IMPL_H
 
+struct correspondence_pair {
+    pcl::PointXYZ src_point;
+    pcl::PointXYZ tar_point;
+    double weight;
+    double distance;
+    bool rejected;
+};
 class icp_implementation {
 public:
+    // constructors
     icp_implementation(void) {};
     ~icp_implementation(void) {};
 
-
-
+    // getters and setters
     pcl::PointCloud<pcl::PointXYZ>::Ptr getInputSource() {
         return this->src_cloud;
     }
@@ -39,24 +46,34 @@ public:
     void setMaxCorrespondenceDistance(double max_distance) {
         this->max_distance = max_distance;
     }
+    Eigen::Matrix4d getFinalTransformation() {
+        return this->final_transformation;
+    }
     
+    // main functions
     void align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess);
-    Eigen::Matrix4d getFinalTransformation();
-
-    
-
-    
 
 private:
+    // private attributes
     pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud;
     pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud;
     pcl::KdTreeFLANN<pcl::PointXYZ> tar_kdtree;
-    
+    Eigen::Matrix4d current_transformation;
+    Eigen::Matrix4d final_transformation;
+    std::vector<correspondence_pair> correspondence_pairs;
     int max_iterations;
     double transformation_epsilon;
     double max_correspondence_distance;
 
+    // private functions
     pcl::PointXYZ getNearestPoint(pcl::PointXYZ point);
+    void determine_corresponding_points();
+    void reject_pairs();
+    void weight_pairs();
+    Eigen::Matrix4d calculate_rotation();
+    double calculate_error();
+
+
 };
 
 #endif
