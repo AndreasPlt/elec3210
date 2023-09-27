@@ -72,8 +72,6 @@ private:
     void weight_pairs();
     Eigen::Matrix4d calculate_rotation();
     double calculate_error();
-
-
 };
 
 #endif
