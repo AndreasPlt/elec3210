@@ -13,6 +13,18 @@
 // icp_implementation constructor
 icp_implementation::icp_implementation() {}
 
+determine_corresponding_points(pcl::PointCloud<pcl::PointXYZ> &src_cloud, pcl::PointCloud<pcl::PointXYZ> &tar_cloud) {
+    // build kd-tree for target cloud
+    tar_kdtree.setInputCloud(tar_cloud);
+    // for each point in source cloud
+    for (int i = 0; i < src_cloud->points.size(); i++) {
+        // find nearest point in target cloud
+        pcl::PointXYZ nearest_point = getNearestPoint(src_cloud->points[i]);
+        // add pair to corresponding points
+        correspondence_pairs.push_back(std::make_pair(src_cloud->points[i], nearest_point));
+    }
+}
+
 
 icp_implementation::getNearestPoint(pcl::PointXYZ point) {
         pcl::PointXYZ nearest_point;
@@ -26,6 +38,7 @@ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
         // check consistency
         return nearest_point;
     }
+icp_implementation::weight_pa
 
 icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
     // determine corresponding points
