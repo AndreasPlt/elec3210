@@ -38,7 +38,36 @@ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
         // check consistency
         return nearest_point;
     }
-icp_implementation::weight_pa
+/**
+ * \brief Assigns weights to correspondence pairs based on their distance.
+ *
+ * This function calculates the distance for each correspondence pair and sorts them
+ * based on distance. It then assigns weights to pairs, where the first num_pairs will
+ * have a weight of 1, and the rest will have a weight of 0.
+ *
+ * \param percentage The percentage of pairs to assign weight 1 (range: 0.0 to 1.0).
+ * \return None.
+ */
+void icp_implementation::weight_pairs(float percentage) {
+    //calculate the distance of each pair
+    for (int i = 0; i < correspondence_pairs.size(); i++) {
+        correspondence_pairs[i].distance = calculate_distance(correspondence_pairs[i]);
+    }
+    //sort the pairs by distance
+    std::sort(correspondence_pairs.begin(), correspondence_pairs.end(), compare_distance);
+    // set the weight of the first num_pairs to 1, rest to zero
+    int num_pairs = correspondence_pairs.size() * (1 - percentage);
+    for (int i = 0; i < num_pairs; i++) {
+        correspondence_pairs[i].weight = 1;
+    }
+    for (int i = num_pairs; i < correspondence_pairs.size(); i++) {
+        correspondence_pairs[i].weight = 0;
+    }
+}
+
+compare_distance(correspondence_pair pair1, correspondence_pair pair2) {
+    return pair1.distance < pair2.distance;
+}
 
 icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
     // determine corresponding points
