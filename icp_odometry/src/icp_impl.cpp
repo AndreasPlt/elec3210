@@ -65,7 +65,7 @@ void icp_implementation::weight_pairs(float percentage) {
     }
 }
 
-compare_distance(correspondence_pair pair1, correspondence_pair pair2) {
+icp_implementation::compare_distance(correspondence_pair pair1, correspondence_pair pair2) {
     return pair1.distance < pair2.distance;
 }
 
