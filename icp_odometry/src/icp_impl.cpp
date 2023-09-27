@@ -48,13 +48,16 @@ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
  * \param percentage The percentage of pairs to assign weight 1 (range: 0.0 to 1.0).
  * \return None.
  */
-void icp_implementation::weight_pairs(float percentage) {
+void icp_implementation::reject_pairs_trimming(float percentage) {
     //calculate the distance of each pair
     for (int i = 0; i < correspondence_pairs.size(); i++) {
         correspondence_pairs[i].distance = calculate_distance(correspondence_pairs[i]);
     }
-    //sort the pairs by distance
-    std::sort(correspondence_pairs.begin(), correspondence_pairs.end(), compare_distance);
+    //sort the pairs by distance using a lambda function
+    std::sort(correspondence_pairs.begin(), correspondence_pairs.end(),
+              [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
+                  return pair1.distance < pair2.distance;
+              });
     // set the weight of the first num_pairs to 1, rest to zero
     int num_pairs = correspondence_pairs.size() * (1 - percentage);
     for (int i = 0; i < num_pairs; i++) {
@@ -64,9 +67,29 @@ void icp_implementation::weight_pairs(float percentage) {
         correspondence_pairs[i].weight = 0;
     }
 }
-
-icp_implementation::compare_distance(correspondence_pair pair1, correspondence_pair pair2) {
-    return pair1.distance < pair2.distance;
+void icp_implementation::reject_pairs_threshold(float threshold){
+    //calculate the distance of each pair
+    for (int i = 0; i < correspondence_pairs.size(); i++) {
+        correspondence_pairs[i].distance = calculate_distance(correspondence_pairs[i]);
+    }
+    for (int i = 0; i<correspondence_pairs.size(); i++){
+        if (correspondence_pairs[i].distance > threshold){
+            correspondence_pairs[i].weight = 0;
+        }
+        else{
+            correspondence_pairs[i].weight = 1;
+        }
+    }
+}
+void icp_implementation::weight_pairs(){
+    struct correspondence_pair max_pair = std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
+              [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
+                  return pair1.distance < pair2.distance;
+              });
+    int max_val = max_element->distance;
+    for (int i = 0; i < correspondence_pairs.size(); i++) {
+        correspondence_pairs[i].weight = 1 - correspondence_pairs[i].distance/max_val;
+    }
 }
 
 icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
