@@ -29,7 +29,6 @@ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
 
 icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
     // determine corresponding points
-    
     // weight/reject pairs
     // compute translation and rotation
     // apply R and t to all points
