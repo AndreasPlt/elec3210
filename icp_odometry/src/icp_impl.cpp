@@ -117,14 +117,24 @@ void icp_implementation::reject_pairs_threshold(float threshold){
         }
     }
 }
-void icp_implementation::weight_pairs(){
+/**
+ * \brief Assigns weights to correspondence pairs based on their distance.
+ *
+ * This function calculates the maximum distance among all correspondence pairs,
+ * and then assigns weights to each pair based on their distance relative to the maximum.
+ * The weight is determined by subtracting the pair's distance from the maximum distance,
+ * and dividing it by the maximum distance.
+ *
+ * \return None.
+ */
+void icp_implementation::weight_pairs() {
     struct correspondence_pair max_pair = std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
               [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
     int max_val = max_element->distance;
     for (int i = 0; i < correspondence_pairs.size(); i++) {
-        correspondence_pairs[i].weight = 1 - correspondence_pairs[i].distance/max_val;
+        correspondence_pairs[i].weight = 1 - correspondence_pairs[i].distance / max_val;
     }
 }
 
