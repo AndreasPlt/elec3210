@@ -1,27 +1,37 @@
 #ifndef ICP_IMPL_H
 #define ICP_IMPL_H
 
+#include <limits>
 #include <pcl/registration/icp.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/transforms.h>
-#include <unordered_set>
+#include <pcl/common/distances.h>
+#include <pcl/common/eigen.h>
+#include <pcl/features/normal_3d.h>
+#include <Eigen/Core>
+
 #include <string>
-#include "parameters.h"
+#include <unordered_set>
 
 struct correspondence_pair {
     pcl::PointXYZ src_point;
     pcl::PointXYZ tar_point;
     double weight;
     double distance;
-    correspondence_pair(): weight(1), distance(0) {};
+    correspondence_pair(pcl::PointXYZ src, pcl::PointXYZ tar): weight(1), distance(0) {
+        src_point = src;
+        tar_point = tar;
+    };
 };
+
 class icp_implementation {
 public:
     // constructors
-    icp_implementation() {};
-    ~icp_implementation() {};
+    icp_implementation();
+    ~icp_implementation();
 
     // getters and setters
     inline pcl::PointCloud<pcl::PointXYZ>::Ptr getInputSource() {
@@ -58,13 +68,14 @@ private:
     // private functions
     pcl::PointXYZ get_nearest_point(pcl::PointXYZ point);
     void determine_corresponding_points();
-    void reject_pair_trimming();
-    void reject_pair_threshold();
-    void weight_pairs();
+    void reject_pairs_trimming();
+    void reject_pairs_threshold();
+    void weight_pairs_distance();
     void calculate_rotation_point2point();
     pcl::PointCloud<pcl::PointNormal>::Ptr estimate_normals();
     void calculate_rotation_point2plane();
     double calculate_error_point2point();
+    double calculate_error_point2plane();
 };
 
 #endif

@@ -10,8 +10,8 @@
 #include <pcl/common/transforms.h>
 #include "icp.h"
 #include "global_definition.h"
-#include "parameters.h"
 #include <fstream>
+#include "parameters.h"
 
 int main(int argc, char **argv) {
     std::string source_pcd_file = WORK_SPACE_PATH + "/../dataset/src.pcd";

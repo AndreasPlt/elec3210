@@ -1,4 +1,5 @@
 #include "icp_impl.h"
+#include "parameters.h"
 
 
 // icp_implementation constructor
@@ -50,7 +51,9 @@ icp_implementation::icp_implementation() {
 }
 
 
-void icp_implementation::align() {
+void icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
+    // TODO use new parameters
+    
     // subsample clouds?
     double prev_error = std::numeric_limits<double>::infinity();
     Eigen::Matrix4d prev_transformation = Eigen::Matrix4d::Identity();
@@ -82,12 +85,12 @@ void icp_implementation::align() {
         else {
             std::cout << "Invalid icp_mode" << std::endl;
         }
-        Eigen::Matrix4d R = current_transformation;
+        
         // apply R and t to all points
-        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, R);
+        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
 
         // compute error
-        double error = 0.0d;
+        double error = 0.0;
         if (params::icp_mode == "point2point") {
             double error = calculate_error_point2point();
         }
@@ -95,18 +98,17 @@ void icp_implementation::align() {
             double error = calculate_error_point2plane();
         }
 
-
-        if error > prev_error {
-            R = prev_transformation;
+        if (error > prev_error) {
+            current_transformation = prev_transformation;
             break;
         }
-        if prev_error - error < params::transformation_epsilon {
+        if (prev_error - error < params::transformation_epsilon) {
             break;
         }
-        prev_transformation = R;
+        prev_transformation = current_transformation;
         prev_error = error;
     }
-    final_transformation = R;
+    final_transformation = current_transformation;
 }
 
 /**
@@ -126,10 +128,7 @@ void icp_implementation::determine_corresponding_points() {
         // find nearest point in target cloud
         pcl::PointXYZ nearest_point = get_nearest_point(point);
         // add pair to corresponding points
-        struct correspondence_pair pair = {
-            point, // src_point
-            nearest_point, // tar_point
-            };
+        struct correspondence_pair pair(point, nearest_point);
         pair.distance = pcl::squaredEuclideanDistance(point, nearest_point);
         correspondence_pairs.push_back(pair);
     }
@@ -146,8 +145,8 @@ pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
         pcl::PointXYZ nearest_point;
         std::vector<int> pointIdxKNNSearch(1);
         std::vector<float> pointKNNSquaredDistance(1);
-        tar_kdtree.nearestKSearch(point, 1, pointIdxNKNSearch, pointNKNSquaredDistance);
-        nearest_point = tar_cloud->points[pointIdxNKNSearch[0]];
+        tar_kdtree.nearestKSearch(point, 1, pointIdxKNNSearch, pointKNNSquaredDistance);
+        nearest_point = tar_cloud->points[pointIdxKNNSearch[0]];
 
         // TODO: multiple nearest points
         // radius search
@@ -196,7 +195,6 @@ void icp_implementation::reject_pairs_threshold(){
 
     // reject pairs with distance greater than threshold
     for (auto &pair: correspondence_pairs) {
-        pair.distance = calculate_distance(pair);
         if (pair.distance > threshold) {
             pair.weight = 0;
         }
@@ -212,12 +210,12 @@ void icp_implementation::reject_pairs_threshold(){
  *
  * \return None.
  */
-void icp_implementation::weight_pairs() {
-    struct correspondence_pair max_pair = std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
+void icp_implementation::weight_pairs_distance() {
+    struct correspondence_pair max_pair = *std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
               [](const struct correspondence_pair& pair1, const struct correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
-    int max_val = max_pair->distance;
+    int max_val = max_pair.distance;
     for (auto &pair: correspondence_pairs) {
         pair.weight = 1 - pair.distance / max_val;
     }
@@ -234,8 +232,8 @@ void icp_implementation::weight_pairs() {
 void icp_implementation::calculate_rotation_point2point() {
 
     // compute means of src and tar clouds
-    double src_sumX = 0.0d, src_sumY = 0.0d, src_sumZ = 0.0d,
-        tar_sumX = 0.0d, tar_sumY = 0.0d, tar_sumZ = 0.0d;
+    double src_sumX = 0.0, src_sumY = 0.0, src_sumZ = 0.0,
+        tar_sumX = 0.0, tar_sumY = 0.0, tar_sumZ = 0.0;
     double total_weight;
 
     for (const auto& pair: correspondence_pairs) {
@@ -258,7 +256,7 @@ void icp_implementation::calculate_rotation_point2point() {
     // compute cross covariance matrix
     Eigen::Matrix3d cross_covariance_matrix;
     cross_covariance_matrix.setZero();
-    for (const &auto pair: correspondence_pairs) {
+    for (const auto& pair: correspondence_pairs) {
         cross_covariance_matrix(0, 0) += (pair.src_point.x - src_meanX) * (pair.tar_point.x - tar_meanX) * pair.weight;
         cross_covariance_matrix(0, 1) += (pair.src_point.x - src_meanX) * (pair.tar_point.y - tar_meanY) * pair.weight;
         cross_covariance_matrix(0, 2) += (pair.src_point.x - src_meanX) * (pair.tar_point.z - tar_meanZ) * pair.weight;
@@ -332,10 +330,17 @@ void icp_implementation::calculate_rotation_point2plane() {
  * @return double The error of the current transformation.
  */
 double icp_implementation::calculate_error_point2point() {
-    double error = 0.0d;
+    double error = 0.0;
+    Eigen::Affine3d affine_transform;
+    affine_transform.matrix() = current_transformation;
     for (const auto& pair: correspondence_pairs) {
-        pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, current_transformation);
+        pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, affine_transform);
         error += pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
     }
     return error;
+}
+
+double icp_implementation::calculate_error_point2plane() {
+    // TODO
+    return 0.0;
 }
