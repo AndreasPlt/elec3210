@@ -6,6 +6,8 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/transforms.h>
+#include <unordered_set>
+#include <string>
 #include "parameters.h"
 
 struct correspondence_pair {

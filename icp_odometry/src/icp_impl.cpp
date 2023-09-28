@@ -3,10 +3,9 @@
 
 // icp_implementation constructor
 icp_implementation::icp_implementation() {
-    std::unordered_set<std::string> 
-        valid_icp_modes = {"point2point", "point2plane"},
-        valid_weight_modes = {"distance", "uniform"},
-        valid_reject_modes = {"threshold", "percentage", "none"};
+    std::unordered_set<std::string> valid_icp_modes = {"point2point", "point2plane"};
+    std::unordered_set<std::string> valid_weight_modes = {"distance", "uniform"};
+    std::unordered_set<std::string> valid_reject_modes = {"threshold", "percentage", "none"};
 
     // check if icp_mode is valid
     if (valid_icp_modes.count(params::icp_mode) == 0) {
