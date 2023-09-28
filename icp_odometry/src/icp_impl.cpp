@@ -289,7 +289,7 @@ pcl::PointCloud<pcl::PointNormal>::Ptr icp_imp::estimate_normals() {
     return tar_cloud_with_normals;
 }    
 
-icp_impl::calculate_rotation_point2plane() {
+void icp_implementation::calculate_rotation_point2plane() {
     //https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp
 }
 
