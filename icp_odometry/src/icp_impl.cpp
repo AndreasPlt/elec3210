@@ -17,7 +17,43 @@ icp_implementation::icp_implementation() {
     this->transformation_epsilon = params::transformation_epsilon;
     this->max_correspondence_distance = params::max_distance;
 
-    this->
+    // TODO
+}
+
+
+void icp_implementation::align() {
+    // subsample clouds?
+
+    double prev_error = std::numeric_limits<double>::infinity();
+    Eigen::Matrix4d prev_transformation = Eigen::Matrix4d::Identity();
+
+    for(int i = 0; i < max_iterations; i++) {
+        // subsample clouds?
+        // determine corresponding points
+        determine_corresponding_points();
+
+        // weight/reject pairs
+        weight_pairs();
+        reject_pairs();
+        // compute translation and rotation
+        Eigen::Matrix4d R = calculate_rotation_point2point();
+        // apply R and t to all points
+        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
+
+        // compute error
+        double error = calculate_error();
+
+        if error < transformation_epsilon {
+            break;
+        }
+        if error > prev_error {
+            current_transformation = prev_transformation;
+            break;
+        }
+        prev_transformation = current_transformation;
+        prev_error = error;
+    }
+    final_transformation = current_transformation;
 }
 
 /**
@@ -35,7 +71,7 @@ void icp_implementation::determine_corresponding_points() {
     // for each point in source cloud
     for(const auto& point: src_cloud_transformed->points) {
         // find nearest point in target cloud
-        pcl::PointXYZ nearest_point = getNearestPoint(point);
+        pcl::PointXYZ nearest_point = get_nearest_point(point);
         // add pair to corresponding points
         struct correspondence_pair pair = {
             point, // src_point
@@ -52,7 +88,7 @@ void icp_implementation::determine_corresponding_points() {
  * @param point Point to find nearest point to.
  * @return pcl::PointXYZ Nearest point in target cloud.
  */
-pcl::PointXYZ icp_implementation::getNearestPoint(pcl::PointXYZ point) {
+pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
         pcl::PointXYZ nearest_point;
         std::vector<int> pointIdxKNNSearch(1);
         std::vector<float> pointKNNSquaredDistance(1);
@@ -117,6 +153,12 @@ void icp_implementation::reject_pairs_threshold(float threshold){
         }
     }
 }
+
+/**
+ * @brief idk what that is
+ * 
+ * 
+ */
 void icp_implementation::weight_pairs(){
     struct correspondence_pair max_pair = std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
               [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
@@ -128,24 +170,6 @@ void icp_implementation::weight_pairs(){
     }
 }
 
-icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
-    // determine corresponding points
-    determine_corresponding_points();
-    // weight/reject pairs
-    weight_pairs();
-    reject_pairs();
-    // compute translation and rotation
-    Eigen::Matrix4d R = calculate_rotation_point2point();
-    // apply R and t to all points
-    
-    pcl::transformPointCloud(*src_cloud, output_cloud, R);
-    // compute error
-    
-    // check convergence (error > threshold)
-        // if not converged, repeat
-    // output final alignment
-}
-
 /**
  * @brief Calculates the rotation matrix and translation vector using point-to-point distance for a single ICP iteration.
  * 
@@ -154,7 +178,7 @@ icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::M
  * The transformation is then applied to the source cloud.
  */
 
-icp_implementation::calculate_rotation_point2point() {
+void icp_implementation::calculate_rotation_point2point() {
 
     // compute means of src and tar clouds
     double src_sumX = 0.0d, src_sumY = 0.0d, src_sumZ = 0.0d,
@@ -211,12 +235,25 @@ icp_implementation::calculate_rotation_point2point() {
     transformation.block<3, 1>(0, 3) = t;
 
     this->current_transformation = transformation;
-
-    // apply transformation to src_cloud
-    pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, transformation);
 }
 
 icp_impl::calculate_rotation_point2plane() {
-
+    // TODO
 }
+
+/**
+ * @brief Calculates the error of the current transformation.
+ * 
+ * This function calculates the error of the current transformation by summing the squared distances
+ * between the source and target points.
+ * 
+ * @return double The error of the current transformation.
+ */
+double icp_implementation::calculate_error() {
+    double error = 0.0d;
+    for(const auto& pair: correspondence_pairs) {
+        pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, current_transformation);
+        error += pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
+    }
+    return error;
 #endif
