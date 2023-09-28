@@ -1,12 +1,3 @@
-#ifndef ICP_IMPL_H
-#define ICP_IMPL_H
-
-#include <pcl/registration/icp.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/common/transforms.h>
-#include "parameters.h"
 #include "icp_impl.h"
 
 
@@ -349,4 +340,3 @@ double icp_implementation::calculate_error_point2point() {
     }
     return error;
 }
-#endif
