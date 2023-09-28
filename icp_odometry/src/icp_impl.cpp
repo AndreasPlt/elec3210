@@ -266,12 +266,10 @@ icp_imp::estimate_normals() {
     // Create search tree
     pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(new pcl::search::KdTree<pcl::PointNormal>);
     tree2->setInputCloud(tar_cloud_with_normals);
-}
+}    
 
-void icp_impl::calculate_rotation_point2plane() {
-    // TODO
-    
-
+icp_impl::calculate_rotation_point2plane() {
+    //https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp
 }
 
 /**
