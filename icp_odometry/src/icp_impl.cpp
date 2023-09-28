@@ -154,7 +154,6 @@ pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
         // check consistency
         return nearest_point;
     }
-
 /**
  * \brief Rejects certain percentage of correspondence pairs based on their distance.
  *
