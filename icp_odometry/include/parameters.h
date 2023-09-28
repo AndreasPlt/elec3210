@@ -12,6 +12,7 @@
 namespace params {
     extern double max_distance;
     extern int max_iterations;
+    extern double transformation_epsilon;
 
     void readParameters(const ros::NodeHandle &nh);
 }
