@@ -110,7 +110,8 @@ pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
  * \param percentage The percentage of pairs to reject.
  * \return None.
  */
-void icp_implementation::reject_pairs_trimming(float percentage) {
+void icp_implementation::reject_pairs_trimming() {
+    float percentage = params::percentage;
     //calculate the distance of each pair
     for(auto &pair: correspondence_pairs) {
         pair.distance = calculate_distance(pair);
@@ -139,7 +140,8 @@ void icp_implementation::reject_pairs_trimming(float percentage) {
  * @param threshold The threshold distance.
  * @return None.
  */
-void icp_implementation::reject_pairs_threshold(float threshold){
+void icp_implementation::reject_pairs_threshold(){
+    float threshold = params::threshold;
     //calculate the distance of each pair
     for (int i = 0; i < correspondence_pairs.size(); i++) {
         correspondence_pairs[i].distance = calculate_distance(correspondence_pairs[i]);
@@ -168,7 +170,7 @@ void icp_implementation::weight_pairs() {
               [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
-    int max_val = max_element->distance;
+    int max_val = max_pair->distance;
     for (int i = 0; i < correspondence_pairs.size(); i++) {
         correspondence_pairs[i].weight = 1 - correspondence_pairs[i].distance / max_val;
     }

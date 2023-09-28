@@ -17,5 +17,9 @@ namespace params{
         std::cout << "max_iterations: " << max_iterations << std::endl;
         nh.getParam("/icp/max_distance", max_distance);
         std::cout << "max_distance: " << max_distance << std::endl;
+        nh.getParam("/icp/threshold: "<< threshold);
+        std::cout << "threshold: " << threshold << std::endl;
+        nh.getPram("/icp/precentage: "<< precentage);
+        std::cout << "precentage: " << precentage << std::endl;
     }
 }
