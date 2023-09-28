@@ -12,18 +12,58 @@
 
 // icp_implementation constructor
 icp_implementation::icp_implementation() {
+    std::unordered_set<std::string> 
+        valid_icp_modes = {"point2point", "point2plane"},
+        valid_weight_modes = {"distance", "uniform"},
+        valid_reject_modes = {"threshold", "percentage", "none"};
 
-    // TODO
+    // check if icp_mode is valid
+    if (valid_icp_modes.count(params::icp_mode) == 0) {
+        std::cout << "Invalid icp_mode" << std::endl;
+        exit(1);
+    }
+    // check if weight_mode is valid
+    if (valid_weight_modes.count(params::weight_mode) == 0) {
+        std::cout << "Invalid weight_mode" << std::endl;
+        exit(1);
+    }
+    // check if reject_mode is valid
+    if (valid_reject_modes.count(params::reject_mode) == 0) {
+        std::cout << "Invalid reject_mode" << std::endl;
+        exit(1);
+    }
+    // check if reject_threshold is valid
+    if (params::reject_threshold <= 0) {
+        std::cout << "Invalid reject_threshold" << std::endl;
+        exit(1);
+    }
+    // check if reject_percentage is valid
+    if (params::reject_percentage < 0 || params::reject_percentage > 1) {
+        std::cout << "Invalid reject_percentage" << std::endl;
+        exit(1);
+    }
+    // check if max_iterations is valid
+    if (params::max_iterations <= 0) {
+        std::cout << "Invalid max_iterations" << std::endl;
+        exit(1);
+    }
+    // check if max_distance is valid
+    if (params::max_distance <= 0) {
+        std::cout << "Invalid max_distance" << std::endl;
+        exit(1);
+    }
+    // check if transformation_epsilon is valid
+    if (params::transformation_epsilon <= 0) {
+        std::cout << "Invalid transformation_epsilon" << std::endl;
+        exit(1);
+    }
 }
 
 
 void icp_implementation::align() {
     // subsample clouds?
-
     double prev_error = std::numeric_limits<double>::infinity();
     Eigen::Matrix4d prev_transformation = Eigen::Matrix4d::Identity();
-
-
 
     for (int i = 0; i < params::max_iterations; i++) {
         // subsample clouds?
