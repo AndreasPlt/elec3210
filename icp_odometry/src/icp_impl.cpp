@@ -187,7 +187,7 @@ void icp_implementation::weight_pairs() {
               [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
-    int max_val = max_element->distance;
+    int max_val = max_pair->distance;
     for (auto &pair: correspondence_pairs) {
         pair.weight = 1 - pair.distance / max_val;
     }
