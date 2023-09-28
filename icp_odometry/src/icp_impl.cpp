@@ -217,6 +217,6 @@ icp_implementation::calculate_rotation_point2point() {
 }
 
 icp_impl::calculate_rotation_point2plane() {
-
+    //https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp
 }
 #endif
