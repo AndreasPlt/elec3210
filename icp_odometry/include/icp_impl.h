@@ -6,8 +6,7 @@ struct correspondence_pair {
     pcl::PointXYZ tar_point;
     double weight;
     double distance;
-    bool rejected;
-    correspondence_pair(): weight(0), distance(0), rejected(false) {};
+    correspondence_pair(): weight(1), distance(0) {};
 };
 class icp_implementation {
 public:
@@ -22,14 +21,8 @@ public:
     inline pcl::PointCloud<pcl::PointXYZ>::Ptr getInputTarget() {
         return this->tar_cloud;
     }
-    inline int getMaxIterations() {
-        return this->max_iterations;
-    }
-    inline double getTransformationEpsilon() {
-        return this->transformation_epsilon;
-    }
-    inline double getMaxCorrespondenceDistance() {
-        return this->max_correspondence_distance;
+    inline Eigen::Matrix4d getFinalTransformation() {
+        return this->final_transformation;
     }
     inline void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud) {
         this->src_cloud = src_cloud;
@@ -38,18 +31,6 @@ public:
     inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud) {
         this->tar_cloud = tar_cloud;
         this->tar_kd_tree.setInputCloud(tar_cloud);
-    }
-    inline void setMaxIterations(int max_iterations) {
-        this->max_iterations = max_iterations;
-    }
-    inline void setTransformationEpsilon(double transformation_epsilon) {
-        this->transformation_epsilon = transformation_epsilon;
-    }
-    inline void setMaxCorrespondenceDistance(double max_distance) {
-        this->max_distance = max_distance;
-    }
-    inline Eigen::Matrix4d getFinalTransformation() {
-        return this->final_transformation;
     }
     
     // main functions
@@ -64,9 +45,6 @@ private:
     Eigen::Matrix4d current_transformation;
     Eigen::Matrix4d final_transformation;
     std::vector<correspondence_pair> correspondence_pairs;
-    int max_iterations;
-    double transformation_epsilon;
-    double max_correspondence_distance;
 
     // private functions
     pcl::PointXYZ get_nearest_point(pcl::PointXYZ point);
@@ -75,7 +53,7 @@ private:
     void weight_pairs();
     void calculate_rotation_point2point();
     void calculate_rotation_point2plane();
-    double calculate_error();
+    double calculate_error_point2point();
 };
 
 #endif

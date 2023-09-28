@@ -12,10 +12,6 @@
 
 // icp_implementation constructor
 icp_implementation::icp_implementation() {
-    // set default parameters
-    this->max_iterations = params::max_iterations;
-    this->transformation_epsilon = params::transformation_epsilon;
-    this->max_correspondence_distance = params::max_distance;
 
     // TODO
 }
@@ -27,33 +23,60 @@ void icp_implementation::align() {
     double prev_error = std::numeric_limits<double>::infinity();
     Eigen::Matrix4d prev_transformation = Eigen::Matrix4d::Identity();
 
-    for(int i = 0; i < max_iterations; i++) {
+
+
+    for (int i = 0; i < params::max_iterations; i++) {
         // subsample clouds?
         // determine corresponding points
         determine_corresponding_points();
 
         // weight/reject pairs
-        weight_pairs();
-        reject_pairs();
+        if (params::weight_mode == "distance") {
+            weight_pairs_distance();
+        }
+
+        if (params::reject_mode == "threshold") {
+            reject_pairs_threshold();
+        }
+        else if (params::reject_mode == "percentage") {
+            reject_pairs_trimming();
+        }
+
         // compute translation and rotation
-        Eigen::Matrix4d R = calculate_rotation_point2point();
+        if (params::icp_mode == "point2point") {
+            calculate_rotation_point2point();
+        }
+        else if (params::icp_mode == "point2plane") {
+            calculate_rotation_point2plane();
+        }
+        else {
+            std::cout << "Invalid icp_mode" << std::endl;
+        }
+        Eigen::Matrix4d R = current_transformation;
         // apply R and t to all points
-        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
+        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, R);
 
         // compute error
-        double error = calculate_error();
+        double error = 0.0d;
+        if (params::icp_mode == "point2point") {
+            double error = calculate_error_point2point();
+        }
+        else if (params::icp_mode == "point2plane") {
+            double error = calculate_error_point2plane();
+        }
 
-        if error < transformation_epsilon {
-            break;
-        }
+
         if error > prev_error {
-            current_transformation = prev_transformation;
+            R = prev_transformation;
             break;
         }
-        prev_transformation = current_transformation;
+        if prev_error - error < params::transformation_epsilon {
+            break;
+        }
+        prev_transformation = R;
         prev_error = error;
     }
-    final_transformation = current_transformation;
+    final_transformation = R;
 }
 
 /**
@@ -69,7 +92,7 @@ void icp_implementation::determine_corresponding_points() {
     correspondence_pairs.clear();
     
     // for each point in source cloud
-    for(const auto& point: src_cloud_transformed->points) {
+    for (const auto& point: src_cloud_transformed->points) {
         // find nearest point in target cloud
         pcl::PointXYZ nearest_point = get_nearest_point(point);
         // add pair to corresponding points
@@ -77,6 +100,7 @@ void icp_implementation::determine_corresponding_points() {
             point, // src_point
             nearest_point, // tar_point
             };
+        pair.distance = pcl::squaredEuclideanDistance(point, nearest_point);
         correspondence_pairs.push_back(pair);
     }
 }
@@ -100,6 +124,7 @@ pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
         // check consistency
         return nearest_point;
     }
+
 /**
  * \brief Rejects certain percentage of correspondence pairs based on their distance.
  *
@@ -110,21 +135,17 @@ pcl::PointXYZ icp_implementation::get_nearest_point(pcl::PointXYZ point) {
  * \param percentage The percentage of pairs to reject.
  * \return None.
  */
-void icp_implementation::reject_pairs_trimming(float percentage) {
-    //calculate the distance of each pair
-    for(auto &pair: correspondence_pairs) {
-        pair.distance = calculate_distance(pair);
-    }
+void icp_implementation::reject_pairs_trimming() {
+    // load percentage
+    double percentage = params::reject_percentage;
+
     //sort the pairs by distance using a lambda function
     std::sort(correspondence_pairs.begin(), correspondence_pairs.end(),
               [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
-    // set the weight of the first num_pairs to 1, rest to zero
+    // leave the weight of the first num_pairs, set rest to zero
     int num_pairs = correspondence_pairs.size() * (1 - percentage);
-    for (int i = 0; i < num_pairs; i++) {
-        correspondence_pairs[i].weight = 1;
-    }
     for (int i = num_pairs; i < correspondence_pairs.size(); i++) {
         correspondence_pairs[i].weight = 0;
     }
@@ -139,17 +160,15 @@ void icp_implementation::reject_pairs_trimming(float percentage) {
  * @param threshold The threshold distance.
  * @return None.
  */
-void icp_implementation::reject_pairs_threshold(float threshold){
-    //calculate the distance of each pair
-    for (int i = 0; i < correspondence_pairs.size(); i++) {
-        correspondence_pairs[i].distance = calculate_distance(correspondence_pairs[i]);
-    }
-    for (int i = 0; i<correspondence_pairs.size(); i++){
-        if (correspondence_pairs[i].distance > threshold){
-            correspondence_pairs[i].weight = 0;
-        }
-        else{
-            correspondence_pairs[i].weight = 1;
+void icp_implementation::reject_pairs_threshold(){
+    // load threshold
+    double threshold = params::reject_threshold;
+
+    // reject pairs with distance greater than threshold
+    for (auto &pair: correspondence_pairs) {
+        pair.distance = calculate_distance(pair);
+        if (pair.distance > threshold) {
+            pair.weight = 0;
         }
     }
 }
@@ -169,8 +188,8 @@ void icp_implementation::weight_pairs() {
                   return pair1.distance < pair2.distance;
               });
     int max_val = max_element->distance;
-    for (int i = 0; i < correspondence_pairs.size(); i++) {
-        correspondence_pairs[i].weight = 1 - correspondence_pairs[i].distance / max_val;
+    for (auto &pair: correspondence_pairs) {
+        pair.weight = 1 - pair.distance / max_val;
     }
 }
 
@@ -189,7 +208,7 @@ void icp_implementation::calculate_rotation_point2point() {
         tar_sumX = 0.0d, tar_sumY = 0.0d, tar_sumZ = 0.0d;
     double total_weight;
 
-    for(const auto& pair: correspondence_pairs) {
+    for (const auto& pair: correspondence_pairs) {
         src_sumX += pair.src_point.x * pair.weight;
         src_sumY += pair.src_point.y * pair.weight;
         src_sumZ += pair.src_point.z * pair.weight;
@@ -209,7 +228,7 @@ void icp_implementation::calculate_rotation_point2point() {
     // compute cross covariance matrix
     Eigen::Matrix3d cross_covariance_matrix;
     cross_covariance_matrix.setZero();
-    for(const &auto pair: correspondence_pairs) {
+    for (const &auto pair: correspondence_pairs) {
         cross_covariance_matrix(0, 0) += (pair.src_point.x - src_meanX) * (pair.tar_point.x - tar_meanX) * pair.weight;
         cross_covariance_matrix(0, 1) += (pair.src_point.x - src_meanX) * (pair.tar_point.y - tar_meanY) * pair.weight;
         cross_covariance_matrix(0, 2) += (pair.src_point.x - src_meanX) * (pair.tar_point.z - tar_meanZ) * pair.weight;
@@ -242,11 +261,11 @@ void icp_implementation::calculate_rotation_point2point() {
 }
 
 /**
- * @brief Construct a new icp imp::estimate normals object
+ * @brief 
  * 
  * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
  */
-icp_imp::estimate_normals() {
+pcl::PointCloud<pcl::PointNormal>::Ptr icp_imp::estimate_normals() {
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud(tar_cloud);
 
@@ -267,9 +286,7 @@ icp_imp::estimate_normals() {
     pcl::PointCloud<pcl::PointNormal>::Ptr tar_cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
     pcl::concatenateFields(*tar_cloud, *tar_cloud_normals, *tar_cloud_with_normals);
 
-    // Create search tree
-    pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(new pcl::search::KdTree<pcl::PointNormal>);
-    tree2->setInputCloud(tar_cloud_with_normals);
+    return tar_cloud_with_normals;
 }    
 
 icp_impl::calculate_rotation_point2plane() {
@@ -284,11 +301,12 @@ icp_impl::calculate_rotation_point2plane() {
  * 
  * @return double The error of the current transformation.
  */
-double icp_implementation::calculate_error() {
+double icp_implementation::calculate_error_point2point() {
     double error = 0.0d;
-    for(const auto& pair: correspondence_pairs) {
+    for (const auto& pair: correspondence_pairs) {
         pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, current_transformation);
         error += pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
     }
     return error;
+}
 #endif
