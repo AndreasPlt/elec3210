@@ -39,7 +39,7 @@ public:
     }
     inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud) {
         this->tar_cloud = tar_cloud;
-        this->tar_kd_tree.setInputCloud(tar_cloud);
+        this->tar_kdtree.setInputCloud(tar_cloud);
     }
     
     // main functions
