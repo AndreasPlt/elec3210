@@ -214,7 +214,7 @@ void icp_implementation::reject_pairs_threshold(){
  */
 void icp_implementation::weight_pairs() {
     struct correspondence_pair max_pair = std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
-              [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
+              [](const struct correspondence_pair& pair1, const struct correspondence_pair& pair2) {
                   return pair1.distance < pair2.distance;
               });
     int max_val = max_pair->distance;
@@ -295,7 +295,7 @@ void icp_implementation::calculate_rotation_point2point() {
  * 
  * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
  */
-pcl::PointCloud<pcl::PointNormal>::Ptr icp_imp::estimate_normals() {
+pcl::PointCloud<pcl::PointNormal>::Ptr icp_implementation::estimate_normals() {
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud(tar_cloud);
 

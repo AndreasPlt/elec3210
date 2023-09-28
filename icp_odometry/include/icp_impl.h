@@ -58,9 +58,11 @@ private:
     // private functions
     pcl::PointXYZ get_nearest_point(pcl::PointXYZ point);
     void determine_corresponding_points();
-    void reject_pairs();
+    void reject_pair_trimming();
+    void reject_pair_threshold();
     void weight_pairs();
     void calculate_rotation_point2point();
+    pcl::PointCloud<pcl::PointNormal>::Ptr estimate_normals();
     void calculate_rotation_point2plane();
     double calculate_error_point2point();
 };
