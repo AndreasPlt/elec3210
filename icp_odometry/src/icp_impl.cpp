@@ -237,8 +237,41 @@ void icp_implementation::calculate_rotation_point2point() {
     this->current_transformation = transformation;
 }
 
-icp_impl::calculate_rotation_point2plane() {
+/**
+ * @brief Construct a new icp imp::estimate normals object
+ * 
+ * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
+ */
+icp_imp::estimate_normals() {
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+    ne.setInputCloud(tar_cloud);
+
+    // Create an empty kdtree representation, and pass it to the normal estimation object.
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+    ne.setSearchMethod(tree);
+
+    // Output datasets
+    pcl::PointCloud<pcl::Normal>::Ptr tar_cloud_normals(new pcl::PointCloud<pcl::Normal>);
+    
+    // Use all neighbors in a sphere of radius 3cm
+    ne.setRadiusSearch(0.03);
+
+    // Compute the features
+    ne.compute(*tar_cloud_normals);
+
+    // Concatenate the XYZ and normal fields
+    pcl::PointCloud<pcl::PointNormal>::Ptr tar_cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
+    pcl::concatenateFields(*tar_cloud, *tar_cloud_normals, *tar_cloud_with_normals);
+
+    // Create search tree
+    pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(new pcl::search::KdTree<pcl::PointNormal>);
+    tree2->setInputCloud(tar_cloud_with_normals);
+}
+
+void icp_impl::calculate_rotation_point2plane() {
     // TODO
+    
+
 }
 
 /**
