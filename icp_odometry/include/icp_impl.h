@@ -11,8 +11,8 @@ struct correspondence_pair {
 class icp_implementation {
 public:
     // constructors
-    icp_implementation(void) {};
-    ~icp_implementation(void) {};
+    icp_implementation() {};
+    ~icp_implementation() {};
 
     // getters and setters
     pcl::PointCloud<pcl::PointXYZ>::Ptr getInputSource() {
@@ -66,11 +66,12 @@ private:
     double max_correspondence_distance;
 
     // private functions
-    pcl::PointXYZ getNearestPoint(pcl::PointXYZ point);
+    pcl::PointXYZ get_nearest_point(pcl::PointXYZ point);
     void determine_corresponding_points();
     void reject_pairs();
     void weight_pairs();
-    Eigen::Matrix4d calculate_rotation();
+    void calculate_rotation_point2point();
+    void calculate_rotation_point2plane();
     double calculate_error();
 };
 
