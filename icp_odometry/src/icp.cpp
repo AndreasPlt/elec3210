@@ -6,10 +6,17 @@
 #include "icp.h"
 #include <pcl/registration/icp.h>
 #include "parameters.h"
-#include "icp_impl.h"
 
 Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
-    icp_implementation icp;
+    if(params::icp_mode == "point2plane"){
+        icp_point2plane icp;
+    }
+    else if(params::icp_mode == "point2point"){
+        icp_point2point icp;
+    }
+    else{
+        std::cout << "Please select correct mode for association.";
+    }
     icp.setInputSource(src_cloud);
     icp.setInputTarget(tar_cloud);
 

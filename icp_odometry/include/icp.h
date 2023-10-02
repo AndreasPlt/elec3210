@@ -9,6 +9,9 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include "icp_general.h"
+#include "icp_point2plane.h"
+#include "icp_point2point.h"
 
 Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess);
 
