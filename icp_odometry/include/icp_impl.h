@@ -31,7 +31,7 @@ class icp_implementation {
 public:
     // constructors
     icp_implementation();
-    ~icp_implementation();
+    ~icp_implementation(){};
 
     // getters and setters
     inline pcl::PointCloud<pcl::PointXYZ>::Ptr getInputSource() {
@@ -45,7 +45,10 @@ public:
     }
     inline void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud) {
         this->src_cloud = src_cloud;
-        this->src_cloud_transformed = src_cloud;
+        std::cout << "Copying input source..." << std::endl;
+        pcl::copyPointCloud<pcl::PointXYZ>(*src_cloud, *src_cloud_transformed);
+        std::cout << "Successfully set input source!" << std::endl;
+        //this->src_cloud_transformed = src_cloud;
     }
     inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud) {
         this->tar_cloud = tar_cloud;
@@ -53,7 +56,7 @@ public:
     }
     
     // main functions
-    void align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess);
+    void align(Eigen::Matrix4d init_guess = Eigen::Matrix4d::Identity());
 
 private:
     // private attributes

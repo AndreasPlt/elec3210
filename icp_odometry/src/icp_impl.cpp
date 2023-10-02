@@ -51,14 +51,20 @@ icp_implementation::icp_implementation() {
 }
 
 
-void icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eigen::Matrix4d init_guess) {
-    // TODO use new parameters
-    
+void icp_implementation::align( 
+    Eigen::Matrix4d init_guess) {
+
+    current_transformation = init_guess;
+
     // subsample clouds?
-    double prev_error = std::numeric_limits<double>::infinity();
-    Eigen::Matrix4d prev_transformation = Eigen::Matrix4d::Identity();
+    determine_corresponding_points();
+    double prev_error = calculate_error_point2point();
+    std::cout << "Initial error: " << prev_error << std::endl;
+    Eigen::Matrix4d prev_transformation = current_transformation;
 
     for (int i = 0; i < params::max_iterations; i++) {
+        std::cout << "Iteration: " << i << std::endl;
+
         // subsample clouds?
         // determine corresponding points
         determine_corresponding_points();
@@ -92,17 +98,22 @@ void icp_implementation::align(pcl::PointCloud<pcl::PointXYZ> &output_cloud, Eig
         // compute error
         double error = 0.0;
         if (params::icp_mode == "point2point") {
-            double error = calculate_error_point2point();
+            error = calculate_error_point2point();
         }
         else if (params::icp_mode == "point2plane") {
-            double error = calculate_error_point2plane();
+            error = calculate_error_point2plane();
         }
-
+        else {
+            std::cout << "Invalid icp_mode: " << params::icp_mode << std::endl;
+        }
+        std::cout << "Error for iteration " << i << ": " << error << std::endl;
         if (error > prev_error) {
             current_transformation = prev_transformation;
+            std::cout << "Error increased, reverting to previous transformation" << std::endl;
             break;
         }
         if (prev_error - error < params::transformation_epsilon) {
+            std::cout << "Error converged" << std::endl;
             break;
         }
         prev_transformation = current_transformation;

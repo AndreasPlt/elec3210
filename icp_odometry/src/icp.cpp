@@ -6,8 +6,21 @@
 #include "icp.h"
 #include <pcl/registration/icp.h>
 #include "parameters.h"
+#include "icp_impl.h"
 
 Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
+    icp_implementation icp;
+    icp.setInputSource(src_cloud);
+    icp.setInputTarget(tar_cloud);
+
+    icp.align(init_guess);
+
+    Eigen::Matrix4d transformation = icp.getFinalTransformation().cast<double>();
+    return transformation;    
+}
+
+
+Eigen::Matrix4d icp_registration2(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
     // This is an example of using pcl::IterativeClosestPoint to align two point clouds
     // In your project, you should implement your own ICP algorithm!!!
     // In your implementation, you can use KDTree in PCL library to find nearest neighbors
