@@ -26,6 +26,12 @@ struct correspondence_pair {
     };
 };
 
+/**
+ * @brief 
+ * 
+ * @tparam S internal point type of source cloud
+ * @tparam T internal point type of target cloud
+ */
 template <class S, class T>
 class icp_general {
 public:
@@ -34,23 +40,25 @@ public:
     ~icp_general(){};
 
     // getters and setters
-    inline pcl::PointCloud<S>::Ptr getInputSource() {
+    /**
+    inline pcl::PointCloud<pcl::PointXYZ>::Ptr getInputSource() {
         return this->src_cloud;
     }
-    inline pcl::PointCloud<T>::Ptr getInputTarget() {
+    inline pcl::PointCloud<pcl::PointXYZ>::Ptr getInputTarget() {
         return this->tar_cloud;
     }
+    */
     inline Eigen::Matrix4d getFinalTransformation() {
         return this->final_transformation;
     }
-    virtual inline void setInputSource(pcl::PointCloud<S>::Ptr src_cloud) {
+    virtual inline void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud) {
         this->src_cloud = src_cloud;
         //pcl::copyPointCloud<pcl::PointXYZ>(*src_cloud, *src_cloud_transformed);
         this->src_cloud_transformed = src_cloud;
     }
-    virtual inline void setInputTarget(pcl::PointCloud<T>::Ptr tar_cloud) {
-        this->tar_cloud = tar_cloud;
-        this->tar_kdtree.setInputCloud(tar_cloud);
+    virtual inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud) {
+        this->tar_cloud = _tar_cloud;
+        this->tar_kdtree.setInputCloud(_tar_cloud);
     }
     
     // main functions
@@ -58,15 +66,16 @@ public:
 
 protected:
     // private attributes
-    pcl::PointCloud<S>::Ptr src_cloud;
-    pcl::PointCloud<T>::Ptr tar_cloud;
-    pcl::PointCloud<S>::Ptr src_cloud_transformed;
+    typename pcl::PointCloud<S>::Ptr src_cloud;
+    typename pcl::PointCloud<T>::Ptr tar_cloud;
+    typename pcl::PointCloud<S>::Ptr src_cloud_transformed;
     pcl::KdTreeFLANN<T> tar_kdtree;
     Eigen::Matrix4d current_transformation;
     Eigen::Matrix4d final_transformation;
-    std::vector<correspondence_pair<S, T>> correspondence_pairs;
+    typename std::vector<correspondence_pair<S, T>> correspondence_pairs;
 
     // virtual functions
+    std::pair<pcl::PointXYZ, pcl::PointXYZ> calculate_means();
     virtual void calculate_rotation() = 0;
     virtual double calculate_error() = 0;
 

@@ -9,23 +9,34 @@
 
 Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
     if(params::icp_mode == "point2plane"){
-        icp_point2plane icp;
+        return point_to_plane_icp(src_cloud, tar_cloud, init_guess);
     }
     else if(params::icp_mode == "point2point"){
-        icp_point2point icp;
+        return point_to_point_icp(src_cloud, tar_cloud, init_guess);
     }
     else{
-        std::cout << "Please select correct mode for association.";
+        std::cout << "Please select correct mode for association." << std::endl;
+        exit(1);
     }
-    icp.setInputSource(src_cloud);
-    icp.setInputTarget(tar_cloud);
-
-    icp.align(init_guess);
-
-    Eigen::Matrix4d transformation = icp.getFinalTransformation().cast<double>();
-    return transformation;    
 }
 
+Eigen::Matrix4d point_to_plane_icp(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
+    icp_point2plane icp;
+    icp.setInputSource(src_cloud);
+    icp.setInputTarget(tar_cloud);
+    icp.align(init_guess);
+    Eigen::Matrix4d transformation = icp.getFinalTransformation().cast<double>();
+    return transformation;
+}
+
+Eigen::Matrix4d point_to_point_icp(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
+    icp_point2point icp;
+    icp.setInputSource(src_cloud);
+    icp.setInputTarget(tar_cloud);
+    icp.align(init_guess);
+    Eigen::Matrix4d transformation = icp.getFinalTransformation().cast<double>();
+    return transformation;
+}
 
 Eigen::Matrix4d icp_registration2(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
     // This is an example of using pcl::IterativeClosestPoint to align two point clouds

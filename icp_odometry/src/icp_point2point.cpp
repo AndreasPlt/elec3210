@@ -1,9 +1,6 @@
 #include "icp_point2point.h"
 #include "parameters.h"
 
-void icp_point2point::determine_corresponding_points() {
-
-}
 
 /**
  * @brief Calculates the rotation matrix and translation vector using point-to-point distance for a single ICP iteration.
@@ -15,26 +12,13 @@ void icp_point2point::determine_corresponding_points() {
 void icp_point2point::calculate_rotation() {
 
     // compute means of src and tar clouds
-    double src_sumX = 0.0, src_sumY = 0.0, src_sumZ = 0.0,
-        tar_sumX = 0.0, tar_sumY = 0.0, tar_sumZ = 0.0;
-    double total_weight;
-
-    for (const auto& pair: correspondence_pairs) {
-        src_sumX += pair.src_point.x * pair.weight;
-        src_sumY += pair.src_point.y * pair.weight;
-        src_sumZ += pair.src_point.z * pair.weight;
-        tar_sumX += pair.tar_point.x * pair.weight;
-        tar_sumY += pair.tar_point.y * pair.weight;
-        tar_sumZ += pair.tar_point.z * pair.weight;
-        total_weight += pair.weight;
-    }
-
-    double src_meanX = src_sumX / total_weight;
-    double src_meanY = src_sumY / total_weight;
-    double src_meanZ = src_sumZ / total_weight;
-    double tar_meanX = tar_sumX / total_weight;
-    double tar_meanY = tar_sumY / total_weight;
-    double tar_meanZ = tar_sumZ / total_weight;
+    std::pair<pcl::PointXYZ, pcl::PointXYZ> means = calculate_means();
+    double src_meanX = means.first.x;
+    double src_meanY = means.first.y;
+    double src_meanZ = means.first.z;
+    double tar_meanX = means.second.x;
+    double tar_meanY = means.second.y;
+    double tar_meanZ = means.second.z;
     
     // compute cross covariance matrix
     Eigen::Matrix3d cross_covariance_matrix;
@@ -79,7 +63,7 @@ void icp_point2point::calculate_rotation() {
  * 
  * @return double The error of the current transformation.
  */
-double icp_implementation::calculate_error() {
+double icp_point2point::calculate_error() {
     double error = 0.0;
     Eigen::Affine3d affine_transform;
     affine_transform.matrix() = current_transformation;

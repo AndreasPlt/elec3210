@@ -57,7 +57,7 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
     // subsample clouds?
     determine_corresponding_points();
-    double prev_error = calculate_error_point2point();
+    double prev_error = calculate_error();
     std::cout << "Initial error: " << prev_error << std::endl;
     Eigen::Matrix4d prev_transformation = current_transformation;
 
@@ -167,7 +167,7 @@ void icp_general<S, T>::reject_pairs_trimming() {
 
     //sort the pairs by distance using a lambda function
     std::sort(correspondence_pairs.begin(), correspondence_pairs.end(),
-              [](const correspondence_pair& pair1, const correspondence_pair& pair2) {
+              [](const correspondence_pair<S, T>& pair1, const correspondence_pair<S, T>& pair2) {
                   return pair1.distance < pair2.distance;
               });
     // leave the weight of the first num_pairs, set rest to zero
@@ -211,7 +211,7 @@ void icp_general<S, T>::reject_pairs_threshold(){
 template<class S, class T>
 void icp_general<S, T>::weight_pairs_distance() {
     struct correspondence_pair<S, T> max_pair = *std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
-              [](const struct correspondence_pair& pair1, const struct correspondence_pair& pair2) {
+              [](const struct correspondence_pair<S, T>& pair1, const struct correspondence_pair<S, T>& pair2) {
                   return pair1.distance < pair2.distance;
               });
     int max_val = max_pair.distance;
@@ -220,3 +220,31 @@ void icp_general<S, T>::weight_pairs_distance() {
     }
 }
 
+template<class S, class T>
+std::pair<pcl::PointXYZ, pcl::PointXYZ> icp_general<S, T>::calculate_means() {
+    double src_sumX = 0.0, src_sumY = 0.0, src_sumZ = 0.0,
+        tar_sumX = 0.0, tar_sumY = 0.0, tar_sumZ = 0.0;
+    double total_weight;
+
+    for (const auto& pair: correspondence_pairs) {
+        src_sumX += pair.src_point.x * pair.weight;
+        src_sumY += pair.src_point.y * pair.weight;
+        src_sumZ += pair.src_point.z * pair.weight;
+        tar_sumX += pair.tar_point.x * pair.weight;
+        tar_sumY += pair.tar_point.y * pair.weight;
+        tar_sumZ += pair.tar_point.z * pair.weight;
+        total_weight += pair.weight;
+    }
+
+    double src_meanX = src_sumX / total_weight;
+    double src_meanY = src_sumY / total_weight;
+    double src_meanZ = src_sumZ / total_weight;
+    double tar_meanX = tar_sumX / total_weight;
+    double tar_meanY = tar_sumY / total_weight;
+    double tar_meanZ = tar_sumZ / total_weight;
+
+    pcl::PointXYZ src_mean(src_meanX, src_meanY, src_meanZ);
+    pcl::PointXYZ tar_mean(tar_meanX, tar_meanY, tar_meanZ);
+
+    return std::make_pair(src_mean, tar_mean);
+}

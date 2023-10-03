@@ -10,28 +10,28 @@
  * 
  * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
  */
-pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals() {
+pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-    ne.setInputCloud(tar_cloud);
+    ne.setInputCloud(cloud);
 
     // Create an empty kdtree representation, and pass it to the normal estimation object.
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
     ne.setSearchMethod(tree);
 
     // Output datasets
-    pcl::PointCloud<pcl::Normal>::Ptr tar_cloud_normals(new pcl::PointCloud<pcl::Normal>);
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
     
     // Use all neighbors in a sphere of radius 3cm
     ne.setRadiusSearch(0.03);
 
     // Compute the features
-    ne.compute(*tar_cloud_normals);
+    ne.compute(*cloud_normals);
 
     // Concatenate the XYZ and normal fields
-    pcl::PointCloud<pcl::PointNormal>::Ptr tar_cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
-    pcl::concatenateFields(*tar_cloud, *tar_cloud_normals, *tar_cloud_with_normals);
+    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
+    pcl::concatenateFields(*cloud, *cloud_normals, *cloud_with_normals);
 
-    return tar_cloud_with_normals;
+    return cloud_with_normals;
 }    
 
 
@@ -46,40 +46,54 @@ pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals() {
 void icp_point2plane::calculate_rotation() {
     // ist das relevant: https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp ?
 
+    // compute means of src and tar clouds
+    std::pair<pcl::PointXYZ, pcl::PointXYZ> means = calculate_means();
+    double src_meanX = means.first.x;
+    double src_meanY = means.first.y;
+    double src_meanZ = means.first.z;
+    double tar_meanX = means.second.x;
+    double tar_meanY = means.second.y;
+    double tar_meanZ = means.second.z;
+
     // Get number of points in the cloud
     int n = correspondence_pairs.size();
     // Now the goal is to construct A and b so that Ax = b can be solved via SVD
     
-    Eigen::matrixXf A(n,6);
-    Eigen::matrixXf b(n);
+    //Eigen::matrixXd A(n,6);
+    Eigen::Matrix<double, Eigen::Dynamic, 6> A(n,6);
+    //Eigen::matrixXd b(n);
+    Eigen::VectorXd b(n);
+
     int idx = 0;
     // Fill the b vector according to fromula in the paper
+    // TODO check if we need to use the weight here
+    // TODO check if we need to shift my mean
     for(const auto& pair: correspondence_pairs){
-        b(idx) += pair.tar_point.n_x * pair.tar_point.x;
-        b(idx) += pair.tar_point.n_y * pair.tar_point.y;
-        b(idx) += pair.tar_point.n_z * pair.tar_point.z;
-        b(idx) -= pair.tar_point.n_x * pair.tar_point.x;
-        b(idx) -= pair.tar_point.n_y * pair.src_point.y;
-        b(idx) -= pair.tar_point.n_z * pair.src_point.z;
+        b(idx) += pair.tar_point.normal_x * pair.tar_point.x;
+        b(idx) += pair.tar_point.normal_y * pair.tar_point.y;
+        b(idx) += pair.tar_point.normal_z * pair.tar_point.z;
+        b(idx) -= pair.tar_point.normal_x * pair.src_point.x;
+        b(idx) -= pair.tar_point.normal_y * pair.src_point.y;
+        b(idx) -= pair.tar_point.normal_z * pair.src_point.z;
         idx++;
     }
     idx = 0;
     // Fill the A matrix according to formula in the paper
     for(const auto& pair: correspondence_pairs){
         // Entry 1-3 
-        A(idx,0) = pair.tar_point.n_z * pair.src_point.y - pair.tar_point.n_y * pair.src_point.z;
-        A(idx,1) = pair.tar_point.n_x * pair.src_point.z - pair.tar_point.n_z * pair.src_point.x;
-        A(idx,2) = pair.tar_point.n_y * pair.src_point.x - pair.tar_point.n_x * pair.src_point.y;
+        A(idx,0) = pair.tar_point.normal_z * pair.src_point.y - pair.tar_point.normal_y * pair.src_point.z;
+        A(idx,1) = pair.tar_point.normal_x * pair.src_point.z - pair.tar_point.normal_z * pair.src_point.x;
+        A(idx,2) = pair.tar_point.normal_y * pair.src_point.x - pair.tar_point.normal_x * pair.src_point.y;
         // Entry 4-6
-        A(idx,3) = pair.tar_point.n_x;
-        A(idx,4) = pair.tar_point.n_y;
-        A(idx,5) = pair.tar_point.n_z;
+        A(idx,3) = pair.tar_point.normal_x;
+        A(idx,4) = pair.tar_point.normal_y;
+        A(idx,5) = pair.tar_point.normal_z;
         idx++;
     }
     idx = 0;
     // Solution of the least squares problem is A^+ * b = x
     Eigen::MatrixXd A_inv = A.completeOrthogonalDecomposition().pseudoInverse();
-    Eigen::x = A_inv.matmul(b);
+    Eigen::Matrix<double, 6, 1> x = A_inv * b;
     //Calculate rotation Matrix R (not the approximation!)
     Eigen::Matrix4d R;
     // First column
