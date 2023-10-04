@@ -143,7 +143,8 @@ T icp_general<S, T>::get_nearest_point(S point) {
         std::vector<float> pointKNNSquaredDistance(1);
         
         // TODO add a new point to search with
-        tar_kdtree.nearestKSearch(point, 1, pointIdxKNNSearch, pointKNNSquaredDistance);
+        T search_point = T(point.x, point.y, point.z);
+        tar_kdtree.nearestKSearch(search_point, 1, pointIdxKNNSearch, pointKNNSquaredDistance);
         nearest_point = tar_cloud->points[pointIdxKNNSearch[0]];
 
         // TODO: multiple nearest points

@@ -6,7 +6,7 @@
 class icp_point2plane: public icp_general<pcl::PointXYZ, pcl::PointNormal> {
 public:
     // constructors
-    icp_point2plane();
+    icp_point2plane() {};
     ~icp_point2plane(){};
 
     // main functions

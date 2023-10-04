@@ -3,7 +3,7 @@
 class icp_point2point: public icp_general<pcl::PointXYZ, pcl::PointXYZ> {
 public:
     // constructors
-    icp_point2point();
+    icp_point2point(){};
     ~icp_point2point(){};
 
     inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud) override {

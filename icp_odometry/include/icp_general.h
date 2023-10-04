@@ -29,8 +29,10 @@ struct correspondence_pair {
 /**
  * @brief 
  * 
- * @tparam S internal point type of source cloud
- * @tparam T internal point type of target cloud
+ * @tparam S internal point type of source cloud. Should have x, y, z attributes.
+ * @tparam T internal point type of target cloud. Should have a constructor that takes in x, y, z as arguments.
+ * 
+ * 
  */
 template <class S, class T>
 class icp_general {
