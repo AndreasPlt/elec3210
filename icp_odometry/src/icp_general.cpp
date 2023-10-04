@@ -141,6 +141,8 @@ T icp_general<S, T>::get_nearest_point(S point) {
         T nearest_point;
         std::vector<int> pointIdxKNNSearch(1);
         std::vector<float> pointKNNSquaredDistance(1);
+        
+        // TODO add a new point to search with
         tar_kdtree.nearestKSearch(point, 1, pointIdxKNNSearch, pointKNNSquaredDistance);
         nearest_point = tar_cloud->points[pointIdxKNNSearch[0]];
 
@@ -248,3 +250,7 @@ std::pair<pcl::PointXYZ, pcl::PointXYZ> icp_general<S, T>::calculate_means() {
 
     return std::make_pair(src_mean, tar_mean);
 }
+
+
+template class icp_general<pcl::PointXYZ, pcl::PointXYZ>;
+template class icp_general<pcl::PointXYZ, pcl::PointNormal>;

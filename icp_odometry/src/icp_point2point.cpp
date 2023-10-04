@@ -52,7 +52,7 @@ void icp_point2point::calculate_rotation() {
     transformation.block<3, 3>(0, 0) = R;
     transformation.block<3, 1>(0, 3) = t;
 
-    this->current_transformation = transformation;
+    current_transformation = transformation;
 }
 
 /**

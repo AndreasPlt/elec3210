@@ -95,27 +95,19 @@ void icp_point2plane::calculate_rotation() {
     Eigen::MatrixXd A_inv = A.completeOrthogonalDecomposition().pseudoInverse();
     Eigen::Matrix<double, 6, 1> x = A_inv * b;
     //Calculate rotation Matrix R (not the approximation!)
-    Eigen::Matrix4d R;
+    Eigen::Matrix3d R;
     // First column
     R(0,0) = 1;
     R(1,0) = x(2);
     R(2,0) = -x(1);
-    R(3,0) = 0;
     // Second column
     R(0,1) = x(0) * x(1) -x(2);
     R(1,1) = x(0) * x(1) * x(2) + 1;
     R(2,1) = x(0);
-    R(3,1) = 0;
     // Third column
     R(0,2) = x(0) * x(2) + x(1);
     R(1,2) = x(1) * x(2) - x(0);
     R(2,2) = 1;
-    R(3,2) = 0;
-    // fourth column
-    R(0,3) = 0;
-    R(1,3) = 0;
-    R(2,3) = 0;
-    R(3,3) = 1;
 
     // compute translation
     Eigen::Vector3d t = Eigen::Vector3d(tar_meanX, tar_meanY, tar_meanZ) - R * Eigen::Vector3d(src_meanX, src_meanY, src_meanZ);
@@ -126,7 +118,7 @@ void icp_point2plane::calculate_rotation() {
     transformation.block<3, 3>(0, 0) = R;
     transformation.block<3, 1>(0, 3) = t;
 
-    this->current_transformation = transformation;
+    current_transformation = transformation;
 }
 
 

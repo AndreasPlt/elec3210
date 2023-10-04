@@ -51,15 +51,8 @@ public:
     inline Eigen::Matrix4d getFinalTransformation() {
         return this->final_transformation;
     }
-    virtual inline void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud) {
-        this->src_cloud = src_cloud;
-        //pcl::copyPointCloud<pcl::PointXYZ>(*src_cloud, *src_cloud_transformed);
-        this->src_cloud_transformed = src_cloud;
-    }
-    virtual inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud) {
-        this->tar_cloud = _tar_cloud;
-        this->tar_kdtree.setInputCloud(_tar_cloud);
-    }
+    virtual void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud) = 0; 
+    virtual void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud) = 0;
     
     // main functions
     void align(Eigen::Matrix4d init_guess = Eigen::Matrix4d::Identity());
@@ -86,7 +79,6 @@ private:
     void reject_pairs_trimming();
     void reject_pairs_threshold();
     void weight_pairs_distance();
-
 };
 
 #endif
