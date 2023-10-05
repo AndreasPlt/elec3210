@@ -15,10 +15,9 @@ Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, 
     else if(params::icp_mode == "point2point"){
         return point_to_point_icp(src_cloud, tar_cloud, init_guess);
     }
-    else{
-        std::cout << "Please select correct mode for association." << std::endl;
-        exit(1);
-    }
+    
+    std::cout << "Please select correct mode for association." << std::endl;
+    exit(1);
 }
 
 Eigen::Matrix4d point_to_plane_icp2(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
