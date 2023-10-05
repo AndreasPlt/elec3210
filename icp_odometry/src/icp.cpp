@@ -42,6 +42,7 @@ Eigen::Matrix4d point_to_plane_icp(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud
     icp.setMaximumIterations(params::max_iterations);  // set maximum iteration
     icp.setTransformationEpsilon(1e-6);  // set transformation epsilon
     icp.setMaxCorrespondenceDistance(params::max_distance);  // set maximum correspondence distance
+    std::cout << "Start aligning" << std::endl;
     pcl::PointCloud<pcl::PointNormal> aligned_cloud;
     icp.align(aligned_cloud, init_guess.cast<float>());
 

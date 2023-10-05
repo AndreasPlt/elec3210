@@ -54,9 +54,11 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
     // initialize current_transformation
     current_transformation = init_guess;
     pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
+    std::cout << "start corresp" << std::endl;
 
     // subsample clouds?
     determine_corresponding_points();
+    
     double prev_error = calculate_error();
     std::cout << "Initial error: " << prev_error << std::endl;
     Eigen::Matrix4d prev_transformation = current_transformation;

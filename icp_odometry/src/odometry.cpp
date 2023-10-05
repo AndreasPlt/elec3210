@@ -64,7 +64,7 @@ void OdomICP::run() {
         dsFilterScan.filter(*laserCloud_filtered);
         // 2. icp
         // 3. update pose
-        Twb *= icp_registration(laserCloudIn, refCloud, Twb);
+        Twb *= icp_registration(laserCloudIn_filtered, refCloud, Twb);
         // 4. update reference cloud
         pcl::transformPointCloud(*refCloud, *refCloud, Twb);
         

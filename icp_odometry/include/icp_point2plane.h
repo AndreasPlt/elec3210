@@ -12,7 +12,9 @@ public:
     // main functions
     inline void setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud) override {
         tar_cloud = estimate_normals(_tar_cloud);
+        std::cout << "start tree stuff" << std::endl;
         tar_kdtree.setInputCloud(tar_cloud);
+        std::cout << "finished tree stuff" << std::endl;
     }
     
     inline void setInputSource(pcl::PointCloud<pcl::PointXYZ>::Ptr _src_cloud) override {

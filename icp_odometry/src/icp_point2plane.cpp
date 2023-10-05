@@ -24,7 +24,9 @@ pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::Po
     
     // Use all neighbors in a sphere of radius 3cm
     // TODO make this flexible
+    //1m radius 
     ne.setRadiusSearch(5);
+    // >30 neighbours
     //ne.setKSearch(5);
 
     // Compute the features
