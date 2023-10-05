@@ -14,6 +14,7 @@
 #include "parameters.h"
 
 int main(int argc, char **argv) {
+    // read parameters
     std::string source_pcd_file = WORK_SPACE_PATH + "/../dataset/src.pcd";
     std::string target_pcd_file = WORK_SPACE_PATH+ "/../dataset/tgt.pcd";
     pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud(new pcl::PointCloud<pcl::PointXYZ>);

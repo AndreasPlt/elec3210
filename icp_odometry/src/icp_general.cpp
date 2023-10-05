@@ -60,8 +60,15 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
     double prev_error = calculate_error();
     std::cout << "Initial error: " << prev_error << std::endl;
     Eigen::Matrix4d prev_transformation = current_transformation;
+    std::clock_t start, end;
+ 
+    /* You can call it like this : start = time(NULL);
+    in both the way start contain total time in seconds
+    since the Epoch. */
+    start = std::clock();
 
     for (int i = 0; i < params::max_iterations; i++) {
+
         std::cout << "Iteration: " << i << std::endl;
 
         // subsample clouds?
@@ -97,11 +104,21 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
         }
         if (prev_error - error < params::transformation_epsilon) {
             std::cout << "Error converged" << std::endl;
+            std::cout << "Final Error:" << error << std::endl;
             break;
         }
         prev_transformation = current_transformation;
         prev_error = error;
+        std::cout << "Current Error:" << error << std::endl;
     }
+    // Recording end time.
+    end = std::clock();
+ 
+    // Calculating total time taken by the program.
+    double time_taken = double(end - start);
+    std::cout << "Time taken by program is : " << std::fixed << time_taken << setprecision(10);
+    std::cout << " ticks " << endl;
+
     final_transformation = current_transformation;
 }
 
