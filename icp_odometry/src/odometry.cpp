@@ -63,8 +63,9 @@ void OdomICP::run() {
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
         // 2. icp
-        // 3. update pose
         Twb = icp_registration(laserCloudIn, refCloud, Twb);
+        // 3. update pose
+        *refCloud = *laserCloudIn;
         // 4. update reference cloud
         timer.toc();
         // 5. publish result
