@@ -47,6 +47,7 @@ void icp_point2plane::calculate_rotation() {
     // ist das relevant: https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp ?
 
     // compute means of src and tar clouds
+    std::cout << "Calculating rotation with p2lane" << std::endl;
     std::pair<pcl::PointXYZ, pcl::PointXYZ> means = calculate_means();
     double src_meanX = means.first.x;
     double src_meanY = means.first.y;

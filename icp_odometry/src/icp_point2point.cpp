@@ -10,6 +10,7 @@
  * The transformation is then applied to the source cloud.
  */
 void icp_point2point::calculate_rotation() {
+    std::cout << "Calculating rotation with p2point" << std::endl;
 
     // compute means of src and tar clouds
     std::pair<pcl::PointXYZ, pcl::PointXYZ> means = calculate_means();
