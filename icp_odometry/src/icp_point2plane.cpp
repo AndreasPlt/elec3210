@@ -11,6 +11,7 @@
  * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
  */
 pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    std::cout << "Entering estimate_normals..." << std::endl;
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud(cloud);
 
@@ -22,15 +23,20 @@ pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::Po
     pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
     
     // Use all neighbors in a sphere of radius 3cm
-    ne.setRadiusSearch(0.03);
+    // TODO make this flexible
+    ne.setRadiusSearch(5);
+    //ne.setKSearch(5);
 
     // Compute the features
     ne.compute(*cloud_normals);
+    for(int i = 0; i < cloud_normals->points.size(); i++){
+        //std::cout <<"Normal: " << cloud_normals->points[i].normal_x << " " << cloud_normals->points[i].normal_y << " " << cloud_normals->points[i].normal_z << std::endl;
+    }
 
     // Concatenate the XYZ and normal fields
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
     pcl::concatenateFields(*cloud, *cloud_normals, *cloud_with_normals);
-
+    std::cout << "Finishing estimate_normals..." << std::endl;
     return cloud_with_normals;
 }    
 
@@ -110,21 +116,24 @@ void icp_point2plane::calculate_rotation() {
     R(1,2) = x(1) * x(2) - x(0);
     R(2,2) = 1;
 
-    // compute translation
-    Eigen::Vector3d t = Eigen::Vector3d(tar_meanX, tar_meanY, tar_meanZ) - R * Eigen::Vector3d(src_meanX, src_meanY, src_meanZ);
-
+    Eigen::Matrix3d I = R * R.transpose();
     // compute transformation
     Eigen::Matrix4d transformation;
     transformation.setIdentity();
     transformation.block<3, 3>(0, 0) = R;
-    transformation.block<3, 1>(0, 3) = t;
+    // set the last column of transformation.block to the last three entries in x
+    transformation.block<3, 1>(0, 3) = x.block<3, 1>(3, 0);
 
+    std::cout << "Should be a transformation matrix: " << transformation << std::endl;
     current_transformation = transformation;
 }
 
 
 double icp_point2plane::calculate_error() {
+
     double error = 0.0;
+    std::cout << "current_error" << error << std::endl;
+
     Eigen::Affine3d affine_transform;
     affine_transform.matrix() = current_transformation;
     for (const auto& pair: correspondence_pairs) {
@@ -133,6 +142,8 @@ double icp_point2plane::calculate_error() {
             + (pair.tar_point.y - transformed_point.y) * pair.tar_point.normal_y 
             + (pair.tar_point.z - transformed_point.z) * pair.tar_point.normal_z;
         error += curr_error * curr_error;
-    }
+        }
+
+    std::cout << "error after calculation" << error << std::endl;
     return error;
 }

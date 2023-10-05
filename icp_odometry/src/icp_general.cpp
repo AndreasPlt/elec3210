@@ -5,7 +5,6 @@
 #include <unordered_set>
 
 
-
 // icp_general constructor
 template<class S, class T>
 icp_general<S, T>::icp_general(): src_cloud_transformed(new pcl::PointCloud<S>) {
@@ -51,6 +50,7 @@ icp_general<S, T>::icp_general(): src_cloud_transformed(new pcl::PointCloud<S>) 
 
 template<class S, class T>
 void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
+    final_transformation = init_guess;
     // initialize current_transformation
     current_transformation = init_guess;
     pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
@@ -73,6 +73,7 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
         // subsample clouds?
         // determine corresponding points
+        
         determine_corresponding_points();
 
         // weight/reject pairs
@@ -89,23 +90,24 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
         // compute translation and rotation
         calculate_rotation();
+        final_transformation *= current_transformation;
         
         // apply R and t to all points
-        pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
+        // pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
 
         // compute error
         double error = calculate_error();
 
         // check convergence
         if (error > prev_error) {
-            current_transformation = prev_transformation;
+            // current_transformation = prev_transformation;
             std::cout << "Error increased, reverting to previous transformation" << std::endl;
-            break;
+            // break;
         }
         if (prev_error - error < params::transformation_epsilon) {
             std::cout << "Error converged" << std::endl;
-            std::cout << "Final Error:" << error << std::endl;
-            break;
+            // std::cout << "Final Error:" << error << std::endl;
+            // break;
         }
         prev_transformation = current_transformation;
         prev_error = error;
@@ -118,8 +120,6 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
     double time_taken = double(end - start);
     std::cout << "Time taken by program is : " << std::fixed << time_taken << setprecision(10);
     std::cout << " ticks " << endl;
-
-    final_transformation = current_transformation;
 }
 
 /**
@@ -136,12 +136,17 @@ void icp_general<S, T>::determine_corresponding_points() {
     correspondence_pairs.clear();
     
     // for each point in source cloud
-    for (const auto& point: src_cloud_transformed->points) {
+    // for (const auto& point: src_cloud_transformed->points) {
+    for (const auto& point: src_cloud->points) {
         // find nearest point in target cloud
-        const T nearest_point = get_nearest_point(point);
+        Eigen::Affine3d affine_final_transform;
+        affine_final_transform.matrix() = final_transformation;
+        
+        S point_transformed = pcl::transformPoint(point, affine_final_transform);
+        const T nearest_point = get_nearest_point(point_transformed);
         // add pair to corresponding points
-        struct correspondence_pair<S, T> pair(point, nearest_point);
-        pair.distance = pcl::squaredEuclideanDistance(point, nearest_point);
+        struct correspondence_pair<S, T> pair(point_transformed, nearest_point);
+        pair.distance = pcl::squaredEuclideanDistance(point_transformed, nearest_point);
         correspondence_pairs.push_back(pair);
     }
 }

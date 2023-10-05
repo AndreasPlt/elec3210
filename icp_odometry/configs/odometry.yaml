@@ -3,4 +3,4 @@ icp:
   max_distance: 0.5
   threshold: 0.0001
   percentage: 0.1
-  icp_mode: "point2plane"
+  icp_mode: "point2point"

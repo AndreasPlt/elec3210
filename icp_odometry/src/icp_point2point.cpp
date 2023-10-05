@@ -67,6 +67,7 @@ void icp_point2point::calculate_rotation() {
 double icp_point2point::calculate_error() {
     double error = 0.0;
     Eigen::Affine3d affine_transform;
+    //affine_transform.matrix() = current_transformation;
     affine_transform.matrix() = current_transformation;
     for (const auto& pair: correspondence_pairs) {
         const pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, affine_transform);

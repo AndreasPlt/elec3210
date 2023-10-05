@@ -13,7 +13,6 @@
 #include <pcl/features/normal_3d.h>
 #include <limits>
 
-
 template <class S, class T>
 struct correspondence_pair {
     S src_point;

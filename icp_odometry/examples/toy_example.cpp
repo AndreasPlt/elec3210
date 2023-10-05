@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
     params::max_distance = 2.0;
     params::max_iterations = 100;
     Eigen::Matrix4d transformation = icp_registration(src_cloud, tar_cloud, transform);
+    std::cout << transformation << std::endl;
 
     // visualization
     pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);

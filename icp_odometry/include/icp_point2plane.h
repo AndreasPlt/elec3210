@@ -21,9 +21,11 @@ public:
         src_cloud_transformed = _src_cloud;
     }
 
+    pcl::PointCloud<pcl::PointNormal>::Ptr estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+
 private:
     // private functions
-    pcl::PointCloud<pcl::PointNormal>::Ptr estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    
     void calculate_rotation() override;
     double calculate_error() override;
 };
