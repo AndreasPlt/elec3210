@@ -1,6 +1,9 @@
 icp:
   max_iterations: 100
   max_distance: 0.5
-  threshold: 0.0001
+  transformation_epsilon: 0.0001
+  reject_threshold: 10
   percentage: 0.1
+  weight_mode: "uniform"
+  reject_mode: percentage
   icp_mode: "point2point"
