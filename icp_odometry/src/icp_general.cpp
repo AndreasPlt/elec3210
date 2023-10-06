@@ -124,14 +124,6 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
     std::cout << " ticks " << endl;
 }
 
-/**
- * @brief Determines the corresponding points between the source and target clouds.
- * 
- * This function uses a KDTree to find the nearest point in the target cloud to each point in the source cloud.
- * It then stores the corresponding points in a vector of correspondence pairs.
- * 
- * @return None.
- */
 template<class S, class T>
 void icp_general<S, T>::determine_corresponding_points() {
     // reset correspondence pairs
@@ -153,13 +145,6 @@ void icp_general<S, T>::determine_corresponding_points() {
     }
 }
 
-/**
- * @brief Obtain the nearest point in the target cloud to a given point.
- * 
- * This function uses a KDTree to find the nearest point in the target cloud to a given point.
- * @param point Point to find nearest point to.
- * @return pcl::PointXYZ Nearest point in target cloud.
- */
 template<class S, class T>
 T icp_general<S, T>::get_nearest_point(S point) {
         T nearest_point;
@@ -177,16 +162,7 @@ T icp_general<S, T>::get_nearest_point(S point) {
         return nearest_point;
     }
 
-/**
- * \brief Rejects certain percentage of correspondence pairs based on their distance.
- *
- * This function calculates the distance for each correspondence pair and sorts them
- * based on distance. It then rejects the last percentage of pairs. 
- * 
- *
- * \param percentage The percentage of pairs to reject.
- * \return None.
- */
+
 template<class S, class T>
 void icp_general<S, T>::reject_pairs_trimming() {
     // load percentage
@@ -204,15 +180,7 @@ void icp_general<S, T>::reject_pairs_trimming() {
     }
 }
 
-/**
- * @brief Rejects correspondence pairs based on a threshold distance.
- * 
- * This function calculates the distance for each correspondence pair and rejects
- * pairs that have a distance greater than the threshold.
- * 
- * @param threshold The threshold distance.
- * @return None.
- */
+
 template<class S, class T>
 void icp_general<S, T>::reject_pairs_threshold(){
     // load threshold
@@ -225,16 +193,8 @@ void icp_general<S, T>::reject_pairs_threshold(){
         }
     }
 }
-/**
- * \brief Assigns weights to correspondence pairs based on their distance.
- *
- * This function calculates the maximum distance among all correspondence pairs,
- * and then assigns weights to each pair based on their distance relative to the maximum.
- * The weight is determined by subtracting the pair's distance from the maximum distance,
- * and dividing it by the maximum distance.
- *
- * \return None.
- */
+
+
 template<class S, class T>
 void icp_general<S, T>::weight_pairs_distance() {
     struct correspondence_pair<S, T> max_pair = *std::max_element(correspondence_pairs.begin(), correspondence_pairs.end(),
@@ -276,6 +236,6 @@ std::pair<pcl::PointXYZ, pcl::PointXYZ> icp_general<S, T>::calculate_means() {
     return std::make_pair(src_mean, tar_mean);
 }
 
-
+// explicit template instantiation
 template class icp_general<pcl::PointXYZ, pcl::PointXYZ>;
 template class icp_general<pcl::PointXYZ, pcl::PointNormal>;
