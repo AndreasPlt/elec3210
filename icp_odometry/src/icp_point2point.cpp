@@ -2,13 +2,6 @@
 #include "parameters.h"
 
 
-/**
- * @brief Calculates the rotation matrix and translation vector using point-to-point distance for a single ICP iteration.
- * 
- * This function first calculates the means of the source and target clouds. It then calculates the cross covariance matrix
- * and performs SVD to obtain the rotation matrix. The translation vector is then calculated using the means and rotation matrix.
- * The transformation is then applied to the source cloud.
- */
 void icp_point2point::calculate_rotation() {
     std::cout << "Calculating rotation with p2point" << std::endl;
 
@@ -56,22 +49,16 @@ void icp_point2point::calculate_rotation() {
     current_transformation = transformation;
 }
 
-/**
- * @brief Calculates the error of the current transformation.
- * 
- * This function calculates the error of the current transformation by summing the squared distances
- * between the source and target points.
- * 
- * @return double The error of the current transformation.
- */
+
 double icp_point2point::calculate_error() {
     double error = 0.0;
     Eigen::Affine3d affine_transform;
-    //affine_transform.matrix() = current_transformation;
     affine_transform.matrix() = current_transformation;
+
     for (const auto& pair: correspondence_pairs) {
         const pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, affine_transform);
-        error += pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
+        error += pair.weight * pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
     }
+
     return error;
 }

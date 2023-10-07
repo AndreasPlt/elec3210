@@ -2,15 +2,8 @@
 #include "parameters.h"
 
 
-
-// PointNormal: inline constexpr PointNormal (const _PointNormal &p) : PointNormal{p.x, p.y, p.z, p.normal_x, p.normal_y, p.normal_z, p.curvature} {}
-
-/**
- * @brief 
- * 
- * Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
- */
 pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+    // Code taken from https://pointclouds.org/documentation/tutorials/normal_estimation.html
     std::cout << "Entering estimate_normals..." << std::endl;
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
     ne.setInputCloud(cloud);
@@ -43,17 +36,7 @@ pcl::PointCloud<pcl::PointNormal>::Ptr icp_point2plane::estimate_normals(pcl::Po
 }    
 
 
-/**
- * @brief Calculates the rotation matrix and translation vector using point-to-plane distance for a single ICP iteration.
- * 
- * The function calculates the optimal rotation for the point cloud based on the point-to-plane approach 
- * introduced by Kok-Lim Low in 2004 (https://www.comp.nus.edu.sg/~lowkl/publications/lowk_point-to-plane_icp_techrep.pdf).
- * The implementation is based on the linear approximation in the paper, solved with SVD.
- *
- */
 void icp_point2plane::calculate_rotation() {
-    // ist das relevant: https://github.com/symao/libicp/blob/master/src/icpPointToPlane.cpp ?
-
     // compute means of src and tar clouds
     std::cout << "Calculating rotation with p2lane" << std::endl;
     std::pair<pcl::PointXYZ, pcl::PointXYZ> means = calculate_means();
@@ -132,20 +115,20 @@ void icp_point2plane::calculate_rotation() {
 
 
 double icp_point2plane::calculate_error() {
-
     double error = 0.0;
-    std::cout << "current_error" << error << std::endl;
 
-    Eigen::Affine3d affine_transform;
+    // define Affine3d transformation
+    const Eigen::Affine3d affine_transform;
     affine_transform.matrix() = current_transformation;
+
     for (const auto& pair: correspondence_pairs) {
         const pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, affine_transform);
+        // calculate error as defined
         const double curr_error = (pair.tar_point.x - transformed_point.x) * pair.tar_point.normal_x 
             + (pair.tar_point.y - transformed_point.y) * pair.tar_point.normal_y 
             + (pair.tar_point.z - transformed_point.z) * pair.tar_point.normal_z;
-        error += curr_error * curr_error;
+        error += pair.weight * curr_error * curr_error;
         }
 
-    std::cout << "error after calculation" << error << std::endl;
     return error;
 }
