@@ -102,14 +102,14 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
         // check convergence
         if (error > prev_error) {
-            // current_transformation = prev_transformation;
+            current_transformation = prev_transformation;
             std::cout << "Error increased, reverting to previous transformation" << std::endl;
-            // break;
+            break;
         }
         if (prev_error - error < params::transformation_epsilon) {
             std::cout << "Error converged" << std::endl;
-            // std::cout << "Final Error:" << error << std::endl;
-            // break;
+            std::cout << "Final Error:" << error << std::endl;
+            break;
         }
         prev_transformation = current_transformation;
         prev_error = error;

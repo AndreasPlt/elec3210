@@ -118,7 +118,7 @@ double icp_point2plane::calculate_error() {
     double error = 0.0;
 
     // define Affine3d transformation
-    const Eigen::Affine3d affine_transform;
+    Eigen::Affine3d affine_transform;
     affine_transform.matrix() = current_transformation;
 
     for (const auto& pair: correspondence_pairs) {
