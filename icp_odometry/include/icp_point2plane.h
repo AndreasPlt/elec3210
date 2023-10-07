@@ -5,6 +5,7 @@
 
 class icp_point2plane: public icp_general<pcl::PointXYZ, pcl::PointNormal> {
 public:
+    
     // constructors
     icp_point2plane() {};
     ~icp_point2plane(){};
@@ -35,9 +36,6 @@ public:
         //pcl::copyPointCloud<pcl::PointXYZ>(*src_cloud, *src_cloud_transformed);
         src_cloud_transformed = _src_cloud;
     }
-
-private:
-    // private functions
     /**
      * @brief Estimates normals for a point cloud using pcl::NormalEstimation.
      * 
@@ -45,6 +43,9 @@ private:
      * @return pcl::PointCloud<pcl::PointNormal>::Ptr Point cloud with PointNormal points, including the estimated normals.
      */
     pcl::PointCloud<pcl::PointNormal>::Ptr estimate_normals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+
+private:
+    // private functions
     /**
     * @brief Calculates the rotation matrix and translation vector using point-to-plane distance for a single ICP iteration.
     * 

@@ -1,3 +1,6 @@
+#ifndef ICP_POINT2POINT_H
+#define ICP_POINT2POINT_H
+
 #include "icp_general.h"
 
 class icp_point2point: public icp_general<pcl::PointXYZ, pcl::PointXYZ> {
@@ -54,3 +57,4 @@ private:
     */
     double calculate_error() override;
 };
+#endif
