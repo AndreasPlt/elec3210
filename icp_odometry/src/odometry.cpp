@@ -60,8 +60,13 @@ void OdomICP::run() {
         // Odometry estimation
         // 1. preprocess: downsample
         pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_filtered;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud_filtered;
+        //Filter Laser Scan cloud
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
+        //Filter Map Cloud
+        dsFilterMap.setInputCloud(refCloud);
+        dsFilterMap.filter(*refCloud_filtered);
         // 2. icp
         // 3. update pose
         Twb *= icp_registration(laserCloudIn_filtered, refCloud, Twb);
