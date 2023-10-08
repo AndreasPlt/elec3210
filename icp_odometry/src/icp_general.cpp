@@ -7,7 +7,8 @@
 
 // icp_general constructor
 template<class S, class T>
-icp_general<S, T>::icp_general(): src_cloud_transformed(new pcl::PointCloud<S>) {
+icp_general<S, T>::icp_general(): 
+    src_cloud_transformed(new pcl::PointCloud<S>), src_cloud(new pcl::PointCloud<S>), tar_cloud(new pcl::PointCloud<T>) {
     std::unordered_set<std::string> valid_weight_modes = {"distance", "uniform"};
     std::unordered_set<std::string> valid_reject_modes = {"threshold", "percentage", "none"};
 
@@ -156,7 +157,7 @@ T icp_general<S, T>::get_nearest_point(S point) {
         search_point.x = point.x;
         search_point.y = point.y;
         search_point.z = point.z;
-        
+
         tar_kdtree.nearestKSearch(search_point, 1, pointIdxKNNSearch, pointKNNSquaredDistance);
         nearest_point = tar_cloud->points[pointIdxKNNSearch[0]];
 

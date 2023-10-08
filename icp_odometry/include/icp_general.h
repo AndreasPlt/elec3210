@@ -94,9 +94,9 @@ public:
 
 protected:
     // private attributes
-    typename pcl::PointCloud<S>::Ptr src_cloud(new pcl::PointCloud<S>);
-    typename pcl::PointCloud<T>::Ptr tar_cloud(new pcl::PointCloud<T>);
-    typename pcl::PointCloud<S>::Ptr src_cloud_transformed(new pcl::PointCloud<S>);
+    typename pcl::PointCloud<S>::Ptr src_cloud;
+    typename pcl::PointCloud<T>::Ptr tar_cloud;
+    typename pcl::PointCloud<S>::Ptr src_cloud_transformed;
     pcl::KdTreeFLANN<T> tar_kdtree;
     Eigen::Matrix4d current_transformation;
     Eigen::Matrix4d final_transformation;
