@@ -16,6 +16,13 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
         nh_(nh) {
 //    initialize variables here
     Twb = Eigen::Matrix4d::Identity(); // initial pose
+    Twk = Eigen::Matrix4d::Identity(); // initial key frame
+    Twb_gt = Eigen::Matrix4d::Identity(); // ground truth pose
+    Twb_prev = Eigen::Matrix4d::Identity(); // previous pose
+    deltaT_pred = Eigen::Matrix4d::Identity(); // predicted pose change
+
+    firstFrame = true;
+
     laserCloudIn.reset(new pcl::PointCloud<pcl::PointXYZ>);
     refCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -58,6 +65,9 @@ void OdomICP::run() {
 
         timer.tic();
         // Odometry estimation
+        // 0. save previous pose
+        Twb_prev = Twb;
+
         // 1. preprocess: downsample
         pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
@@ -69,9 +79,14 @@ void OdomICP::run() {
         dsFilterMap.filter(*refCloud_filtered);
         // 2. icp
         // 3. update pose
-        Twb *= icp_registration(laserCloud_filtered, refCloud_filtered, Twb);
+        //deltaT_pred = icp_registration(laserCloud_filtered, refCloud_filtered, deltaT_pred);
+        deltaT_pred = icp_registration(refCloud_filtered, laserCloud_filtered, Eigen::Matrix4d::Identity());
+        Twb *= deltaT_pred;
+        
+        //Twb *= icp_registration(laserCloud_filtered, refCloud_filtered, Twb);
+        
         // 4. update reference cloud
-        pcl::transformPointCloud(*refCloud, *refCloud, Twb);
+        pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
         
         timer.toc();
         // 5. publish result

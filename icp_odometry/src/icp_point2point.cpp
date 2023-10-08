@@ -17,6 +17,8 @@ void icp_point2point::calculate_rotation() {
     // compute cross covariance matrix
     Eigen::Matrix3d cross_covariance_matrix;
     cross_covariance_matrix.setZero();
+    std::cout << "Init Cross covariance matrix: " << std::endl;
+    std::cout << cross_covariance_matrix << std::endl;
     for (const auto& pair: correspondence_pairs) {
         cross_covariance_matrix(0, 0) += (pair.src_point.x - src_meanX) * (pair.tar_point.x - tar_meanX) * pair.weight;
         cross_covariance_matrix(0, 1) += (pair.src_point.x - src_meanX) * (pair.tar_point.y - tar_meanY) * pair.weight;
@@ -28,17 +30,27 @@ void icp_point2point::calculate_rotation() {
         cross_covariance_matrix(2, 1) += (pair.src_point.z - src_meanZ) * (pair.tar_point.y - tar_meanY) * pair.weight;
         cross_covariance_matrix(2, 2) += (pair.src_point.z - src_meanZ) * (pair.tar_point.z - tar_meanZ) * pair.weight;
     }
+    std::cout << "Final Cross covariance matrix: " << std::endl;
+    std::cout << cross_covariance_matrix << std::endl;
 
     // compute SVD
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(cross_covariance_matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    std::cout << "Singular values: " << svd.singularValues() << std::endl;
+    std::cout << "U matrix: " << svd.matrixU() << std::endl;
+    std::cout << "V matrix: " << svd.matrixV() << std::endl;
     Eigen::Matrix3d U = svd.matrixU();
     Eigen::Matrix3d V = svd.matrixV();
 
     // compute rotation
     Eigen::Matrix3d R = V * U.transpose();
+    std::cout << "Rotation matrix: " << std::endl;
+    std::cout << R << std::endl;
+    std::cout << "Determinant: " << R.determinant() << std::endl;
 
     // compute translation
     Eigen::Vector3d t = Eigen::Vector3d(tar_meanX, tar_meanY, tar_meanZ) - R * Eigen::Vector3d(src_meanX, src_meanY, src_meanZ);
+    std::cout << "Translation vector: " << std::endl;
+    std::cout << t << std::endl;
 
     // compute transformation
     Eigen::Matrix4d transformation;
@@ -47,6 +59,7 @@ void icp_point2point::calculate_rotation() {
     transformation.block<3, 1>(0, 3) = t;
 
     current_transformation = transformation;
+    std::cout << "-----" << std::endl;
 }
 
 

@@ -8,11 +8,14 @@
 #include "parameters.h"
 
 
+
 Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr tar_cloud, Eigen::Matrix4d init_guess) {
-    if(params::icp_mode == "point2plane"){
+	//return Eigen::Matrix4d::Identity();
+    /*if(params::icp_mode == "point2plane"){
         return point_to_plane_icp(src_cloud, tar_cloud, init_guess);
-    }
-    else if(params::icp_mode == "point2point"){
+    }*/
+    //else 
+    if(params::icp_mode == "point2point"){
         return point_to_point_icp(src_cloud, tar_cloud, init_guess);
     }
     

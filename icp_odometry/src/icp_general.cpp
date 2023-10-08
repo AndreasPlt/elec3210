@@ -8,7 +8,8 @@
 // icp_general constructor
 template<class S, class T>
 icp_general<S, T>::icp_general(): 
-    src_cloud_transformed(new pcl::PointCloud<S>), src_cloud(new pcl::PointCloud<S>), tar_cloud(new pcl::PointCloud<T>) {
+    src_cloud_transformed(new pcl::PointCloud<S>), src_cloud(new pcl::PointCloud<S>), tar_cloud(new pcl::PointCloud<T>),
+    final_transformation(Eigen::Matrix4d::Identity()), current_transformation(Eigen::Matrix4d::Identity()) {
     std::unordered_set<std::string> valid_weight_modes = {"distance", "uniform"};
     std::unordered_set<std::string> valid_reject_modes = {"threshold", "percentage", "none"};
 
@@ -55,7 +56,7 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
     // initialize current_transformation
     current_transformation = init_guess;
     pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
-    std::cout << "start corresp" << std::endl;
+    // std::cout << "start corresp" << std::endl;
 
     // subsample clouds?
     determine_corresponding_points();
@@ -72,7 +73,7 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
     for (int i = 0; i < params::max_iterations; i++) {
 
-        std::cout << "Iteration: " << i << std::endl;
+        // std::cout << "Iteration: " << i << std::endl;
 
         // subsample clouds?
         // determine corresponding points
@@ -93,7 +94,6 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
         // compute translation and rotation
         calculate_rotation();
-        final_transformation *= current_transformation;
         
         // apply R and t to all points
         // pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, current_transformation);
@@ -103,26 +103,29 @@ void icp_general<S, T>::align(Eigen::Matrix4d init_guess) {
 
         // check convergence
         if (error > prev_error) {
+            // delete prev_trans 
             current_transformation = prev_transformation;
-            std::cout << "Error increased, reverting to previous transformation" << std::endl;
+            //std::cout << "Error increased, reverting to previous transformation" << std::endl;
             break;
         }
         if (prev_error - error < params::transformation_epsilon) {
-            std::cout << "Error converged" << std::endl;
-            std::cout << "Final Error:" << error << std::endl;
+            //std::cout << "Error converged" << std::endl;
+            //std::cout << "Final Error:" << error << std::endl;
             break;
         }
+        final_transformation *= current_transformation;
         prev_transformation = current_transformation;
         prev_error = error;
-        std::cout << "Current Error:" << error << std::endl;
+        // std::cout << "Current Error:" << error << std::endl;
     }
     // Recording end time.
     end = std::clock();
+    std::cout << "Final Error:" << prev_error << std::endl;
  
     // Calculating total time taken by the program.
     double time_taken = double(end - start);
-    std::cout << "Time taken by program is : " << std::fixed << time_taken << setprecision(10);
-    std::cout << " ticks " << endl;
+    //std::cout << "Time taken by program is : " << std::fixed << time_taken << setprecision(10);
+    //std::cout << " ticks " << endl;
 }
 
 template<class S, class T>
