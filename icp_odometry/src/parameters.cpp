@@ -11,7 +11,7 @@ namespace params{
     double max_distance = 1.0;
     int max_iterations = 100;
     double transformation_epsilon = 1e-6;
-    std::string icp_mode = "point2plane";
+    std::string icp_mode = "point2point";
     std::string weight_mode = "uniform";
     std::string reject_mode = "none";
     double reject_threshold = 0.1;
