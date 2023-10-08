@@ -59,8 +59,8 @@ void OdomICP::run() {
         timer.tic();
         // Odometry estimation
         // 1. preprocess: downsample
-        pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_filtered;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud_filtered;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
         //Filter Laser Scan cloud
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
