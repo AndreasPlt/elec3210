@@ -5,6 +5,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/passthrough.h>
 #include "global_definition.h"
+#include "parameters.h"
 
 using namespace std;
 using namespace Eigen;
@@ -46,6 +47,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 void OdomICP::run() {
     ros::Rate rate(1000);
 
+
     while (ros::ok()){
         if (cloudQueue.empty()){
             rate.sleep();
@@ -62,6 +64,8 @@ void OdomICP::run() {
             firstFrame = false;
             Twb = Eigen::Matrix4d::Identity();
             *refCloud = *laserCloudIn;
+            dsFilterScan.setInputCloud(laserCloudIn);
+            dsFilterScan.filter(*prevCloud);
             continue;
         }
 
@@ -93,7 +97,11 @@ void OdomICP::run() {
         // 4. update reference cloud
         //pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
         //add the current laserCloud to    the ref point cloud
-        *refCloud += *laserCloud_filtered;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::transformPointCloud(*laserCloudIn, *laserCloud_transformed, Twb.cast<float>());
+
+        *refCloud += *laserCloud_transformed;
+
         // extract current positioin in the final transfromation matrix
         Eigen::Vector3d t = Twb.block<3,1>(0,3);
         // Delete all points in the ref cloud that are too far away from the current position print old size
