@@ -1,3 +1,5 @@
 #!/bin/bash
 catkin_make
-./devel/lib/icp_odometry/toy_example
+source devel/setup.zsh
+# icp odometry. Remember to press space to start.
+roslaunch icp_odometry icp.laun

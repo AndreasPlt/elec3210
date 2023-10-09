@@ -92,7 +92,30 @@ void OdomICP::run() {
         
         // 4. update reference cloud
         //pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
-        //add the current laserCloud to the ref point cloud
+        //add the current laserCloud to    the ref point cloud
+        *refCloud += *laserCloud_filtered;
+        // extract current positioin in the final transfromation matrix
+        Eigen::Vector3d t = Twb.block<3,1>(0,3);
+        // Delete all points in the ref cloud that are too far away from the current position print old size
+        std::cout << "refCloud size: " << refCloud->size() << std::endl;
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(refCloud);
+        pass.setFilterFieldName("x");
+        pass.setFilterLimits(t(0) - 50, t(0) + 50);
+        pass.filter(*refCloud);
+        pass.setInputCloud(refCloud);
+        pass.setFilterFieldName("y");
+        pass.setFilterLimits(t(1) - 50, t(1) + 50);
+        pass.filter(*refCloud);
+        pass.setInputCloud(refCloud);
+        pass.setFilterFieldName("z");
+        pass.setFilterLimits(t(2) - 50, t(2) + 50);
+        pass.filter(*refCloud);
+        std::cout << "refCloud size: " << refCloud->size() << std::endl;
+        //downsample the current map
+        dsFilterMap.setInputCloud(refCloud);
+        dsFilterMap.filter(*refCloud);
+        std::cout << "refCloud size: " << refCloud->size() << std::endl;
         
 
         
