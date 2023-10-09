@@ -28,6 +28,7 @@ private:
     ros::NodeHandle &nh_;
     std_msgs::Header cloudHeader;
     pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr prevCloud;
     pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud;
     std::queue<std::pair<std_msgs::Header, sensor_msgs::PointCloud2ConstPtr>> cloudQueue;
 

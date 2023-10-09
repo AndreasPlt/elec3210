@@ -16,6 +16,7 @@ Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, 
     }*/
     //else 
     if(params::icp_mode == "point2point"){
+        //return point_to_point_icp(src_cloud, tar_cloud, init_guess);
         return point_to_point_icp(src_cloud, tar_cloud, init_guess);
     }
     

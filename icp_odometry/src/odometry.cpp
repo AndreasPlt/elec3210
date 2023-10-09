@@ -25,6 +25,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 
     laserCloudIn.reset(new pcl::PointCloud<pcl::PointXYZ>);
     refCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
+    prevCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
 
 //    initialze downsample filter here
     const double scan_leaf_size = 0.5, map_leaf_size = 0.1;
@@ -44,6 +45,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 
 void OdomICP::run() {
     ros::Rate rate(1000);
+
     while (ros::ok()){
         if (cloudQueue.empty()){
             rate.sleep();
@@ -74,24 +76,34 @@ void OdomICP::run() {
         //Filter Laser Scan cloud
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
+        std::cout << "filtered Scan size: " << laserCloud_filtered->size();
         //Filter Map Cloud
         dsFilterMap.setInputCloud(refCloud);
         dsFilterMap.filter(*refCloud_filtered);
+        std:cout << "filtered Map size: " << refCloud_filtered->size();
+        
         // 2. icp
         // 3. update pose
         //deltaT_pred = icp_registration(laserCloud_filtered, refCloud_filtered, deltaT_pred);
-        deltaT_pred = icp_registration(refCloud_filtered, laserCloud_filtered, Eigen::Matrix4d::Identity());
-        Twb *= deltaT_pred;
+        //deltaT_pred = icp_registration(refCloud_filtered, laserCloud_filtered, Eigen::Matrix4d::Identity());
+        //Twb *= deltaT_pred;
         
-        //Twb *= icp_registration(laserCloud_filtered, refCloud_filtered, Twb);
+        //Twb *= icp_registration(laserCloud_filtered, refCloud_filtered, Twb); 
         
         // 4. update reference cloud
-        pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
+        //pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
+        //add the current laserCloud to the ref point cloud
         
+
+        
+        Twb = icp_registration2(laserCloud_filtered, prevCloud, Twb);
+        std::cout << "Should be not identity matrix: " << Twb << std::endl;
+
         timer.toc();
         // 5. publish result
         publishResult();
         rate.sleep();
+        prevCloud = laserCloud_filtered;
     }
 }
 
