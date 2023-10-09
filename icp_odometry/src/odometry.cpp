@@ -101,18 +101,18 @@ void OdomICP::run() {
         pcl::PassThrough<pcl::PointXYZ> pass;
         pass.setInputCloud(refCloud);
         pass.setFilterFieldName("x");
-        pass.setFilterLimits(t(0) - 50, t(0) + 50);
+        pass.setFilterLimits(t(0) - params::max_distance, t(0) + params::max_distance);
         pass.filter(*refCloud);
         pass.setInputCloud(refCloud);
         pass.setFilterFieldName("y");
-        pass.setFilterLimits(t(1) - 50, t(1) + 50);
+        pass.setFilterLimits(t(1) - params::max_distance, t(1) + params::max_distance);
         pass.filter(*refCloud);
         pass.setInputCloud(refCloud);
         pass.setFilterFieldName("z");
-        pass.setFilterLimits(t(2) - 50, t(2) + 50);
+        pass.setFilterLimits(t(2) - params::max_distance, t(2) + params::max_distance);
         pass.filter(*refCloud);
         std::cout << "refCloud size: " << refCloud->size() << std::endl;
-        //downsample the current map
+        //downsample the current map #TODO eventuell neuen Filter nutzen und immer auf Konstante größe samplen ratio = OldMap.size()/NewMap.size()
         dsFilterMap.setInputCloud(refCloud);
         dsFilterMap.filter(*refCloud);
         std::cout << "refCloud size: " << refCloud->size() << std::endl;
