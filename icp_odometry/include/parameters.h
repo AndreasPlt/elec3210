@@ -8,17 +8,16 @@
 #define SRC_PARAMETERS_H
 
 #include <ros/ros.h>
-#include <string>
 
 namespace params {
     extern double max_distance;
     extern int max_iterations;
-    extern double transformation_epsilon;
-    extern std::string icp_mode; // choices: point2point, point2plane
-    extern std::string weight_mode; // choices: distance, uniform
-    extern std::string reject_mode; // choices: none, threshold, percentage
-    extern double reject_threshold; // should be > 0
-    extern double reject_percentage; // should be in [0, 1]
+    extern int update_mode; // 0: previous frame, 1: key frame, 2:map mode
+    extern int key_frame_mode; // 0: time mode, 1: overlap mode
+    extern double time_threshold; // only used for key frame mode
+    extern int map_size;
+    extern int map_range;
+    extern int remove;
 
     void readParameters(const ros::NodeHandle &nh);
 }

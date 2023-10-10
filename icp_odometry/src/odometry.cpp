@@ -1,11 +1,17 @@
 #include "odometry.h"
+#include "parameters.h"
+#include "global_definition.h"
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/filters/filter.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/passthrough.h>
-#include "global_definition.h"
-#include "parameters.h"
+#include <pcl/filters/random_sample.h>
+#include <math.h>
+#include <time.h>
+#include <pcl/filters/extract_indices.h>
+
+
 
 using namespace std;
 using namespace Eigen;
@@ -17,16 +23,10 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
         nh_(nh) {
 //    initialize variables here
     Twb = Eigen::Matrix4d::Identity(); // initial pose
-    Twk = Eigen::Matrix4d::Identity(); // initial key frame
-    Twb_gt = Eigen::Matrix4d::Identity(); // ground truth pose
-    Twb_prev = Eigen::Matrix4d::Identity(); // previous pose
-    deltaT_pred = Eigen::Matrix4d::Identity(); // predicted pose change
-
-    firstFrame = true;
-
+    Twb_prev = Eigen::Matrix4d::Identity();
+    deltaT_pred = Eigen::Matrix4d::Identity();
     laserCloudIn.reset(new pcl::PointCloud<pcl::PointXYZ>);
     refCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
-    prevCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
 
 //    initialze downsample filter here
     const double scan_leaf_size = 0.5, map_leaf_size = 0.1;
@@ -46,8 +46,6 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 
 void OdomICP::run() {
     ros::Rate rate(1000);
-
-
     while (ros::ok()){
         if (cloudQueue.empty()){
             rate.sleep();
@@ -62,17 +60,17 @@ void OdomICP::run() {
 
         if (firstFrame){
             firstFrame = false;
-            Twb = Eigen::Matrix4d::Identity();
+            Twb = Eigen::Matrix4d::Identity(); // initial pose
+            Twb_prev = Eigen::Matrix4d::Identity();
+            deltaT_pred = Eigen::Matrix4d::Identity();
             *refCloud = *laserCloudIn;
-            dsFilterScan.setInputCloud(laserCloudIn);
-            dsFilterScan.filter(*prevCloud);
             continue;
+            //store current time (For keyframe time mode)
+            last_update_time = std::clock();
         }
 
         timer.tic();
         // Odometry estimation
-        // 0. save previous pose
-        Twb_prev = Twb;
 
         // 1. preprocess: downsample
         pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
@@ -84,58 +82,114 @@ void OdomICP::run() {
         //Filter Map Cloud
         dsFilterMap.setInputCloud(refCloud);
         dsFilterMap.filter(*refCloud_filtered);
-        std:cout << "filtered Map size: " << refCloud_filtered->size();
-        
+        std::cout << "filtered Map size: " << refCloud_filtered->size();
+
         // 2. icp
-        // 3. update pose
-        //deltaT_pred = icp_registration(laserCloud_filtered, refCloud_filtered, deltaT_pred);
-        //deltaT_pred = icp_registration(refCloud_filtered, laserCloud_filtered, Eigen::Matrix4d::Identity());
-        //Twb *= deltaT_pred;
-        
-        //Twb *= icp_registration(laserCloud_filtered, refCloud_filtered, Twb); 
-        
-        // 4. update reference cloud
-        //pcl::transformPointCloud(*refCloud, *refCloud, deltaT_pred);
-        //add the current laserCloud to    the ref point cloud
-        pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::transformPointCloud(*laserCloudIn, *laserCloud_transformed, Twb.cast<float>());
+        // Create initial guess based on previous pose
+        // invert Twb_prev 
+        Eigen::Matrix4d Twb_prev_inv = Eigen::Matrix4d::Identity();
+        Twb_prev_inv.block<3,3>(0,0) = Twb.block<3,3>(0,0).transpose();
+        Twb_prev_inv.block<3,1>(0,3) = -Twb.block<3,3>(0,0).transpose() * Twb.block<3,1>(0,3);
+        // Get T_{w->c} with old laserCloud, initial guess is the last T_{p->c} 
+        Twb = icp_registration(laserCloud_filtered, refCloud_filtered, deltaT_pred * Twb);
+        // Calucalte delta for next initial guess ( based on constant motion model)
+        deltaT_pred = Twb * Twb_prev_inv;
+        // extract the rotation on the z-axis 
+        double phi = std::atan2(Twb(1,0),Twb(0,0));
+        Eigen::Matrix3d euler_z = Eigen::Matrix3d::Identity();
+        euler_z(0,0) = std::cos(phi);
+        euler_z(1,0) = std::sin(phi);
+        euler_z(0,1) = -std::sin(phi);
+        euler_z(1,1) = std::cos(phi);
+        Twb.block<3,3>(0,0) = euler_z;
+        Twb(2,3) = 0;
 
-        *refCloud += *laserCloud_transformed;
+        // transform the scan and store in ref cloud for publishing
+        switch(params::update_mode){
+            //previous frame mode
+            case 0: 
+                pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                break;
+            //key frame mode
+            case 1: 
+                if(params::key_frame_mode == 0){
+                    if( (std::clock() - last_update_time) / CLOCKS_PER_SEC > params::time_threshold){
+                        //update keyframe
+                        pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                        //update time stamp
+                        last_update_time = std::clock();
+                    }
+                }            
+                else if(params::key_frame_mode == 1){
+                    //calculate bounding box for both point clouds
+                    //maybe bounding boxes as approximation
+                }
+                break;
+            //map mode
+            case 2:
+                // Transform current scan
+                pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
+                pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
+                // Extend map
+                *refCloud += *transformed_scan;
+                // Get current position
+                
+                if(params::remove == 0){
+                    remove_euclidean();
+                }
+                else if(params::remove == 1){
+                    remove_inf();
+                }
 
-        // extract current positioin in the final transfromation matrix
-        Eigen::Vector3d t = Twb.block<3,1>(0,3);
-        // Delete all points in the ref cloud that are too far away from the current position print old size
-        std::cout << "refCloud size: " << refCloud->size() << std::endl;
-        pcl::PassThrough<pcl::PointXYZ> pass;
-        pass.setInputCloud(refCloud);
-        pass.setFilterFieldName("x");
-        pass.setFilterLimits(t(0) - params::max_distance, t(0) + params::max_distance);
-        pass.filter(*refCloud);
-        pass.setInputCloud(refCloud);
-        pass.setFilterFieldName("y");
-        pass.setFilterLimits(t(1) - params::max_distance, t(1) + params::max_distance);
-        pass.filter(*refCloud);
-        pass.setInputCloud(refCloud);
-        pass.setFilterFieldName("z");
-        pass.setFilterLimits(t(2) - params::max_distance, t(2) + params::max_distance);
-        pass.filter(*refCloud);
-        std::cout << "refCloud size: " << refCloud->size() << std::endl;
-        //downsample the current map #TODO eventuell neuen Filter nutzen und immer auf Konstante größe samplen ratio = OldMap.size()/NewMap.size()
-        dsFilterMap.setInputCloud(refCloud);
-        dsFilterMap.filter(*refCloud);
-        std::cout << "refCloud size: " << refCloud->size() << std::endl;
-        
 
-        
-        Twb = icp_registration2(laserCloud_filtered, prevCloud, Twb);
-        std::cout << "Should be not identity matrix: " << Twb << std::endl;
+                // Downsampling of map with Random smaple 
+                pcl::RandomSample<pcl::PointXYZ> random_sample;
+                random_sample.setInputCloud(refCloud);
+                random_sample.setSample(params::map_size);
+                random_sample.filter(*refCloud);
+                break;
+        }
 
+        //tic toc lol
         timer.toc();
         // 5. publish result
         publishResult();
         rate.sleep();
-        prevCloud = laserCloud_filtered;
     }
+}
+void OdomICP::remove_euclidean(){
+    // Get current position
+    pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
+    // Remove points based on eucldiean distance
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    for(int i = 0; i < refCloud->size(); i++){
+        if(std::sqrt(std::pow(refCloud->points[i].x - current_position.x, 2) + std::pow(refCloud->points[i].y - current_position.y, 2) + std::pow(refCloud->points[i].z - current_position.z, 2)) > params::map_range){
+            inliers->indices.push_back(i); 
+        }
+    }
+    extract.setInputCloud(refCloud);
+    extract.setIndices(inliers);
+    extract.setNegative(true);
+    extract.filter(*refCloud);
+}
+void OdomICP::remove_inf(){
+    // Get current position
+    pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
+    // remove all points in refCloud with one coordinate larger than current position + map_range
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud(refCloud);
+    pass.setFilterFieldName("x");
+    pass.setFilterLimits(current_position.x - params::map_range, current_position.x + params::map_range);
+    pass.filter(*refCloud);
+    pass.setInputCloud(refCloud);
+    pass.setFilterFieldName("y");
+    pass.setFilterLimits(current_position.y - params::map_range, current_position.y + params::map_range);
+    pass.filter(*refCloud);
+    pass.setInputCloud(refCloud);
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(current_position.z - params::map_range, current_position.z + params::map_range);
+    pass.filter(*refCloud);
 }
 
 void OdomICP::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){

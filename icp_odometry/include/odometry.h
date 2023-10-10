@@ -28,7 +28,6 @@ private:
     ros::NodeHandle &nh_;
     std_msgs::Header cloudHeader;
     pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr prevCloud;
     pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud;
     std::queue<std::pair<std_msgs::Header, sensor_msgs::PointCloud2ConstPtr>> cloudQueue;
 
@@ -37,6 +36,8 @@ private:
     Eigen::Matrix4d Twb_gt; // transformation from body to world (ground truth)
     Eigen::Matrix4d Twb_prev; // transformation from body to world (previous)
     Eigen::Matrix4d deltaT_pred; // predicted transformation from previous to current
+
+    std::clock_t last_update_time;
 
     pcl::VoxelGrid<pcl::PointXYZ> dsFilterScan;
     pcl::VoxelGrid<pcl::PointXYZ> dsFilterMap;
@@ -68,6 +69,12 @@ public:
     void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg);
 
     void filterLocalMap();
+
+    void remove_euclidean();
+
+    void remove_inf();
+
+    Eigen::Matrix4d euler_z(Eigen::Matrix4d R);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg);
 

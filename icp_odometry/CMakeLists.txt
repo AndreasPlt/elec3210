@@ -33,8 +33,8 @@ target_link_libraries(${PROJECT_NAME}
 add_executable(odom_node examples/odom_node.cpp)
 target_link_libraries(odom_node ${PROJECT_NAME})
 
-add_executable(toy_example examples/toy_example.cpp)
-target_link_libraries(toy_example ${PROJECT_NAME})
+#add_executable(toy_example examples/toy_example.cpp)
+#target_link_libraries(toy_example ${PROJECT_NAME})
 
 add_executable(traj_eval examples/traj_eval.cpp)
 target_link_libraries(traj_eval ${PROJECT_NAME})

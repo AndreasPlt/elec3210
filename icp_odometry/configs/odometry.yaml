@@ -1,9 +1,17 @@
 icp:
+  # ICP settings
   max_iterations: 100
-  max_distance: 5
-  transformation_epsilon: 0.0001
-  reject_threshold: 0.5
-  percentage: 0.1
-  weight_mode: "uniform"
-  reject_mode: "none"
-  icp_mode: "point2point"
+  max_distance: 5 # initial value 0.5
+
+  # Refernce cloud settings
+  update_mode : 2 # 0: previous frame, 1: key frame, 2:map mode
+
+  # Key frame settings
+  key_frame_mode : 0 # 0: time mode, 1: overlap mode
+  time_threshold : 0.001 # only used for key frame mode
+
+  # Map settings
+  map_size : 10000
+  map_range : 55
+  remove : 0
+  
