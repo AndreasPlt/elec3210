@@ -10,6 +10,7 @@
 #include <ros/ros.h>
 
 namespace params {
+    // icp mode enums
     enum WeightMode {
         DISTANCE_INVERSE,
         DISTANCE_MAX_SCALING, 
@@ -21,23 +22,51 @@ namespace params {
         THRESHOLD,
         PERCENTAGE,
         };
+    
+    // pipeline mode enums
+    enum UpdateMode {
+        PREVIOUS_FRAME,
+        KEY_FRAME,
+        MAP_MODE,
+        };
 
-    extern double max_distance;
-    extern int max_iterations;
-    extern int update_mode; // 0: previous frame, 1: key frame, 2:map mode
-    extern int key_frame_mode; // 0: time mode, 1: overlap mode
-    extern double time_threshold; // only used for key frame mode
-    extern int map_size;
-    extern int map_range;
-    extern int remove;
-    extern double transformation_epsilon;
-    extern std::string icp_mode; // choices: point2point, point2plane
+    enum KeyFrameMode {
+        TIME_MODE,
+        OVERLAP_MODE,
+        };
+    
+    
+    enum RemoveMode {
+        EUCLIDEAN_NORM,
+        INF_NORM,
+    };
+
+
+    // icp parameters
+    extern double max_distance; // should be > 0
+    extern int max_iterations; // should be > 0
+    extern double transformation_epsilon; // should be > 0
     extern WeightMode weight_mode; // choices: distance, uniform
     extern RejectMode reject_mode; // choices: none, threshold, percentage
     extern double reject_threshold; // should be > 0
     extern double reject_percentage; // should be in [0, 1]
 
+    // pipeline parameters
+    extern UpdateMode update_mode; // choices: previous_frame, key_frame, map_mode
+    extern KeyFrameMode key_frame_mode; // choices: time_mode, overlap_mode
+    extern double time_threshold; // only used for key_frame mode
+    extern int map_size;
+    extern int map_range;
+    extern RemoveMode remove_mode; // choices: euclidean_norm, inf_norm
+   
+
     void readParameters(const ros::NodeHandle &nh);
+
+    void readWeightMode(const ros::NodeHandle &nh);
+    void readRejectMode(const ros::NodeHandle &nh);
+    void readUpdateMode(const ros::NodeHandle &nh);
+    void readKeyFrameMode(const ros::NodeHandle &nh);
+    void readRemoveMode(const ros::NodeHandle &nh);
 }
 
 #endif //SRC_PARAMETERS_H
