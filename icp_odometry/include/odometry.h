@@ -59,8 +59,6 @@ private:
 
     std::ofstream traj_file;
 
-    char *filename;
-
 public:
 
     OdomICP(ros::NodeHandle &n);

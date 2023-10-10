@@ -44,7 +44,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 
 //    traj_file.open(WORK_SPACE_PATH + "/../dataset/true_trajectory.txt");
     // convert WORK_SPACE_PATH + "/../dataset/true_trajectory.txt" to const char
-    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    std::string s = WORK_SPACE_PATH + "/../dataset/est_trajectory.txt"; 
     const char* filename = s.c_str(); 
     std::ofstream ofs;
     ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
@@ -173,7 +173,7 @@ void OdomICP::run() {
 }
 
 void OdomICP::store_data(const std::vector<Pose>& data) {
-    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    std::string s = WORK_SPACE_PATH + "/../dataset/est_trajectory.txt"; 
     const char* filename = s.c_str(); 
     std::ofstream infile;
     infile.open(filename, std::ios_base::app);
