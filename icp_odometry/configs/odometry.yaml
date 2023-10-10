@@ -4,7 +4,7 @@ icp:
   max_distance: 5 # initial value 0.5
 
   # Refernce cloud settings
-  update_mode : 2 # 0: previous frame, 1: key frame, 2:map mode
+  update_mode : 1  # 0: previous frame, 1: key frame, 2:map mode
 
   # Key frame settings
   key_frame_mode : 0 # 0: time mode, 1: overlap mode

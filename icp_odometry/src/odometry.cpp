@@ -113,7 +113,7 @@ void OdomICP::run() {
             //key frame mode
             case 1: 
                 if(params::key_frame_mode == 0){
-                    if( (std::clock() - last_update_time) / CLOCKS_PER_SEC > params::time_threshold){
+                    if( (double)(std::clock() - last_update_time) / (double)CLOCKS_PER_SEC > params::time_threshold){
                         //update keyframe
                         pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
                         //update time stamp
@@ -127,27 +127,31 @@ void OdomICP::run() {
                 break;
             //map mode
             case 2:
-                // Transform current scan
-                pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
-                pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
-                // Extend map
-                *refCloud += *transformed_scan;
-                // Get current position
-                
-                if(params::remove == 0){
-                    remove_euclidean();
+                if( (double)(std::clock() - last_update_time) / (double)CLOCKS_PER_SEC > params::time_threshold){
+                    //update keyframe
+                    pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                    //update time stamp
+                    last_update_time = std::clock();
+                    // Transform current scan
+                    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
+                    pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
+                    // Extend map
+                    *refCloud += *transformed_scan;
+                    // Get current position
+                    
+                    if(params::remove == 0){
+                        remove_euclidean();
+                    }
+                    else if(params::remove == 1){
+                        remove_inf();
+                    }
+                    // Downsampling of map with Random smaple 
+                    pcl::RandomSample<pcl::PointXYZ> random_sample;
+                    random_sample.setInputCloud(refCloud);
+                    random_sample.setSample(params::map_size);
+                    random_sample.filter(*refCloud);
+                    break;
                 }
-                else if(params::remove == 1){
-                    remove_inf();
-                }
-
-
-                // Downsampling of map with Random smaple 
-                pcl::RandomSample<pcl::PointXYZ> random_sample;
-                random_sample.setInputCloud(refCloud);
-                random_sample.setSample(params::map_size);
-                random_sample.filter(*refCloud);
-                break;
         }
 
         //tic toc lol
