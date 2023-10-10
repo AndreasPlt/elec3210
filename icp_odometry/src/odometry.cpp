@@ -11,6 +11,8 @@
 #include <time.h>
 #include <pcl/filters/extract_indices.h>
 
+#include <string.h>
+
 
 
 using namespace std;
@@ -41,7 +43,12 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
     map_pub = nh_.advertise<sensor_msgs::PointCloud2>("cloud_map", 1);
 
 //    traj_file.open(WORK_SPACE_PATH + "/../dataset/true_trajectory.txt");
-    std::cout << "Odometry ICP initialized" << std::endl;
+    // convert WORK_SPACE_PATH + "/../dataset/true_trajectory.txt" to const char
+    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    const char* filename = s.c_str(); 
+    std::ofstream ofs;
+    ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+    ofs.close();
 }
 
 void OdomICP::run() {
@@ -78,11 +85,9 @@ void OdomICP::run() {
         //Filter Laser Scan cloud
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
-        std::cout << "filtered Scan size: " << laserCloud_filtered->size();
         //Filter Map Cloud
         dsFilterMap.setInputCloud(refCloud);
         dsFilterMap.filter(*refCloud_filtered);
-        std::cout << "filtered Map size: " << refCloud_filtered->size();
 
         // 2. icp
         // Create initial guess based on previous pose
@@ -156,10 +161,32 @@ void OdomICP::run() {
 
         //tic toc lol
         timer.toc();
+        //4.5 store trajectory
+        std::vector<Pose> est;
+        est.push_back({cloudHeader.stamp.toSec(), Twb});
+        std::cout << filename << std::endl;
+        store_data(est);
         // 5. publish result
         publishResult();
         rate.sleep();
     }
+}
+
+void OdomICP::store_data(const std::vector<Pose>& data) {
+    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    const char* filename = s.c_str(); 
+    std::ofstream infile;
+    infile.open(filename, std::ios_base::app);
+    for (const auto& pose : data) {
+        infile << pose.timestamp << " ";
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                infile << pose.pose(i, j) << " ";
+            }
+        }
+        infile << std::endl;
+    }
+    infile.close();
 }
 void OdomICP::remove_euclidean(){
     // Get current position
