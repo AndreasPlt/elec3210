@@ -21,7 +21,10 @@
 #include <pcl/filters/voxel_grid.h>
 #include "utils.h"
 #include <fstream>
-
+struct Pose {
+    double timestamp;
+    Eigen::Matrix4d pose;
+};
 class OdomICP {
 
 private:
@@ -56,6 +59,8 @@ private:
 
     std::ofstream traj_file;
 
+    char *filename;
+
 public:
 
     OdomICP(ros::NodeHandle &n);
@@ -73,6 +78,8 @@ public:
     void remove_euclidean();
 
     void remove_inf();
+
+    void store_data(const std::vector<Pose>& data);
 
     Eigen::Matrix4d euler_z(Eigen::Matrix4d R);
 

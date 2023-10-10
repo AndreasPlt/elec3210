@@ -11,6 +11,8 @@
 #include <time.h>
 #include <pcl/filters/extract_indices.h>
 
+#include <string.h>
+
 
 
 using namespace std;
@@ -41,7 +43,12 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
     map_pub = nh_.advertise<sensor_msgs::PointCloud2>("cloud_map", 1);
 
 //    traj_file.open(WORK_SPACE_PATH + "/../dataset/true_trajectory.txt");
-    std::cout << "Odometry ICP initialized" << std::endl;
+    // convert WORK_SPACE_PATH + "/../dataset/true_trajectory.txt" to const char
+    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    const char* filename = s.c_str(); 
+    std::ofstream ofs;
+    ofs.open(filename, std::ofstream::out | std::ofstream::trunc);
+    ofs.close();
 }
 
 void OdomICP::run() {
@@ -78,11 +85,9 @@ void OdomICP::run() {
         //Filter Laser Scan cloud
         dsFilterScan.setInputCloud(laserCloudIn);
         dsFilterScan.filter(*laserCloud_filtered);
-        std::cout << "filtered Scan size: " << laserCloud_filtered->size();
         //Filter Map Cloud
         dsFilterMap.setInputCloud(refCloud);
         dsFilterMap.filter(*refCloud_filtered);
-        std::cout << "filtered Map size: " << refCloud_filtered->size();
 
         // 2. icp
         // Create initial guess based on previous pose
@@ -132,38 +137,63 @@ void OdomICP::run() {
 
             //map mode
             case params::MAP_MODE:
-                // Transform current scan
-                pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
-                pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
-                // Extend map
-                *refCloud += *transformed_scan;
-                // Get current position
-                switch(params::remove_mode) {
-                    case params::EUCLIDEAN_NORM:
-                        remove_euclidean();
-                        break;
-                    case params::INF_NORM:
-                        remove_inf();
-                        break;
+                if( (double)(std::clock() - last_update_time) / (double)CLOCKS_PER_SEC > params::time_threshold){
+                    //update keyframe
+                    pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                    //update time stamp
+                    last_update_time = std::clock();
+                    // Transform current scan
+                    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
+                    pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
+                    // Extend map
+                    *refCloud += *transformed_scan;
+                    // Get current position
+                    
+                    switch(params::remove_mode){
+                        case params::EUCLIDEAN_NORM:
+                            remove_euclidean();
+                            break;
+                        case params::INF_NORM:
+                            remove_inf();
+                            break;
+                    }
+                    pcl::RandomSample<pcl::PointXYZ> random_sample;
+                    random_sample.setInputCloud(refCloud);
+                    random_sample.setSample(params::map_size);
+                    random_sample.filter(*refCloud);
+                    break;
                 }
-
-                // Downsampling of map with Random smaple 
-                pcl::RandomSample<pcl::PointXYZ> random_sample;
-                random_sample.setInputCloud(refCloud);
-                random_sample.setSample(params::map_size);
-                random_sample.filter(*refCloud);
-                break;
         }
 
         //tic toc lol
         timer.toc();
+        //4.5 store trajectory
+        std::vector<Pose> est;
+        est.push_back({cloudHeader.stamp.toSec(), Twb});
+        std::cout << filename << std::endl;
+        store_data(est);
         // 5. publish result
         publishResult();
         rate.sleep();
     }
 }
 
-
+void OdomICP::store_data(const std::vector<Pose>& data) {
+    std::string s = WORK_SPACE_PATH + "/../dataset/true_trajectory.txt"; 
+    const char* filename = s.c_str(); 
+    std::ofstream infile;
+    infile.open(filename, std::ios_base::app);
+    for (const auto& pose : data) {
+        infile << pose.timestamp << " ";
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                infile << pose.pose(i, j) << " ";
+            }
+        }
+        infile << std::endl;
+    }
+    infile.close();
+}
 void OdomICP::remove_euclidean(){
     // Get current position
     pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
