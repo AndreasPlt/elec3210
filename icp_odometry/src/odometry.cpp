@@ -107,40 +107,45 @@ void OdomICP::run() {
         // transform the scan and store in ref cloud for publishing
         switch(params::update_mode){
             //previous frame mode
-            case 0: 
+            case params::PREVIOUS_FRAME: 
                 pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
                 break;
+
             //key frame mode
-            case 1: 
-                if(params::key_frame_mode == 0){
-                    if( (std::clock() - last_update_time) / CLOCKS_PER_SEC > params::time_threshold){
-                        //update keyframe
-                        pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
-                        //update time stamp
-                        last_update_time = std::clock();
-                    }
-                }            
-                else if(params::key_frame_mode == 1){
-                    //calculate bounding box for both point clouds
-                    //maybe bounding boxes as approximation
+            case params::KEY_FRAME: 
+                switch(params::key_frame_mode) {
+                    case params::TIME_MODE:
+                        if( (std::clock() - last_update_time) / CLOCKS_PER_SEC > params::time_threshold){
+                            //update keyframe
+                            pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                            //update time stamp
+                            last_update_time = std::clock();
+                        }   
+                        break;
+
+                    case params::OVERLAP_MODE:
+                        //calculate bounding box for both point clouds
+                        //maybe bounding boxes as approximation
+                        break;
                 }
                 break;
+
             //map mode
-            case 2:
+            case params::MAP_MODE:
                 // Transform current scan
                 pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
                 pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
                 // Extend map
                 *refCloud += *transformed_scan;
                 // Get current position
-                
-                if(params::remove == 0){
-                    remove_euclidean();
+                switch(params::remove_mode) {
+                    case params::EUCLIDEAN_NORM:
+                        remove_euclidean();
+                        break;
+                    case params::INF_NORM:
+                        remove_inf();
+                        break;
                 }
-                else if(params::remove == 1){
-                    remove_inf();
-                }
-
 
                 // Downsampling of map with Random smaple 
                 pcl::RandomSample<pcl::PointXYZ> random_sample;
@@ -157,6 +162,8 @@ void OdomICP::run() {
         rate.sleep();
     }
 }
+
+
 void OdomICP::remove_euclidean(){
     // Get current position
     pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
@@ -173,6 +180,7 @@ void OdomICP::remove_euclidean(){
     extract.setNegative(true);
     extract.filter(*refCloud);
 }
+
 void OdomICP::remove_inf(){
     // Get current position
     pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
