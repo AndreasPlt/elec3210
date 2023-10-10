@@ -28,11 +28,15 @@ int main(int argc, char **argv) {
     pcl::transformPointCloud(*src_cloud, *src_cloud, transform);
 
     // icp
-    params::max_distance = 2.0;
+    params::max_distance = 16.0;
     params::max_iterations = 100;
+    auto started = std::chrono::high_resolution_clock::now();
+
     Eigen::Matrix4d transformation = icp_registration(src_cloud, tar_cloud, transform);
     std::cout << transformation << std::endl;
 
+    auto done = std::chrono::high_resolution_clock::now();
+    std::cout << "ICP took the following time: " << std::chrono::duration_cast<std::chrono::milliseconds>(done-started).count() << "ms" << std::endl;
     // visualization
     pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, transformation);

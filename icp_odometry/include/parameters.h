@@ -11,12 +11,24 @@
 #include <string>
 
 namespace params {
+    enum WeightMode {
+        DISTANCE_INVERSE,
+        DISTANCE_MAX_SCALING, 
+        UNIFORM,
+        };
+
+    enum RejectMode {
+        NONE,
+        THRESHOLD,
+        PERCENTAGE,
+        };
+
     extern double max_distance;
     extern int max_iterations;
     extern double transformation_epsilon;
     extern std::string icp_mode; // choices: point2point, point2plane
-    extern std::string weight_mode; // choices: distance, uniform
-    extern std::string reject_mode; // choices: none, threshold, percentage
+    extern WeightMode weight_mode; // choices: distance, uniform
+    extern RejectMode reject_mode; // choices: none, threshold, percentage
     extern double reject_threshold; // should be > 0
     extern double reject_percentage; // should be in [0, 1]
 

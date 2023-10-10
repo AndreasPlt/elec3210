@@ -125,9 +125,7 @@ void OdomICP::run() {
         dsFilterMap.filter(*refCloud);
         std::cout << "refCloud size: " << refCloud->size() << std::endl;
         
-
-        
-        Twb = icp_registration2(laserCloud_filtered, prevCloud, Twb);
+        Twb = icp_registration(laserCloud_filtered, prevCloud, Twb);
         std::cout << "Should be not identity matrix: " << Twb << std::endl;
 
         timer.toc();
