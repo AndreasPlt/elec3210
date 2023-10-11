@@ -213,7 +213,7 @@ void icp_2::reject_pairs_percentage(){
 }
 
 // public function
-void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d init_guess = Eigen::Matrix4d::Identity()){
+void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d init_guess){
     Eigen::Matrix4d iter_transformation;
 
     final_transformation = init_guess;

@@ -43,7 +43,7 @@ namespace params{
         std::cout << "transformation_epsilon: " << transformation_epsilon << std::endl;
 
         nh.getParam("/icp/reject_threshold", reject_threshold);
-        assert(reject_threshold > 0)
+        assert(reject_threshold > 0);
         std::cout << "reject_threshold: " << reject_threshold << std::endl;
 
         nh.getParam("/icp/reject_percentage", reject_percentage);
