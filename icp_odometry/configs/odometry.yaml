@@ -10,7 +10,7 @@ icp:
   debug_mode: false # choices: true, false
 
   # Pipeline settings
-  update_mode : map_mode  # choices: previous_frame, key_frame, map_mode
+  update_mode : previous_frame  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
   key_frame_mode : overlap_mode # choices: time_mode, overlap_mode
