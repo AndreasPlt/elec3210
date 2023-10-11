@@ -1,6 +1,6 @@
 icp:
   # ICP settings
-  max_distance: 5
+  max_distance: 16
   max_iterations: 100
   transformation_epsilon: 0.01
   weight_mode: distance_inverse # choices: distance_inverse, distance_max_scaling, uniform
@@ -9,13 +9,13 @@ icp:
   reject_threshold: 5 # for icp pair rejection
   debug_mode: false # choices: true, false
 
-  # Pipeline settings
-  update_mode : key_frame  # choices: previous_frame, key_frame, map_mode
+  # Refernce cloud settings
+  update_mode : map_mode  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
-  key_frame_mode : overlap_mode # choices: time_mode, overlap_mode
-  time_threshold : 0.001 # used for key frame mode and map mode / time between key frame updates
-  overlap_threshold: 0.99 # only used for key frame mode / minimum overlap between key frames
+  key_frame_mode : time_mode # choices: time_mode, overlap_mode
+  time_threshold : 0.1 # only used for key frame mode (time)
+  overlap_threshold: 0.98 # only used for key frame mode (overlap)
 
   # Map settings
   map_size : 10000 # amount of points in the map
