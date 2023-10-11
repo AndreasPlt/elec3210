@@ -214,6 +214,8 @@ void icp_2::reject_pairs_percentage(){
 
 // public function
 void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d init_guess){
+    auto started = std::chrono::high_resolution_clock::now();
+ 
     Eigen::Matrix4d iter_transformation;
 
     final_transformation = init_guess;
@@ -225,7 +227,7 @@ void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d in
 
     int i = 0;
     std::string break_reason = "All iterations completed";
-    for(int i = 0; i < params::max_iterations; i++){
+    for(i = 0; i < params::max_iterations; i++){
         pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, final_transformation);
 
         determine_corresponding_points();
@@ -247,7 +249,17 @@ void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d in
         prev_error = error;
         final_transformation = iter_transformation * final_transformation;
     }
-    std::cout << "Statistics:\t" << "Error: " << error << "\tIterations: " << i << std::endl;
+
+    auto done = std::chrono::high_resolution_clock::now();
+
+    if(params::debug_mode) {
+        std::cout << "Statistics:\t" << 
+            "Error: " << error << 
+            "\tIterations: " << i << 
+            "\tBreak reason: " << break_reason << 
+            "\tICP duration: "<< std::chrono::duration_cast<std::chrono::milliseconds>(done-started).count() << "ms" << 
+            std::endl;
+    }
 
     pcl::transformPointCloud(*src_cloud, *output, final_transformation);
 }

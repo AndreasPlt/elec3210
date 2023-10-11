@@ -25,6 +25,7 @@ namespace params{
     RejectMode reject_mode = THRESHOLD;
     double reject_threshold = 0.1;
     double reject_percentage = 0.1;
+    bool debug_mode = false;
 
     void readParameters(const ros::NodeHandle& nh){
         std::cout << "Reading parameters..." << std::endl;
@@ -52,6 +53,9 @@ namespace params{
 
         readWeightMode(nh);
         readRejectMode(nh);
+
+        nh.getParam("/icp/debug_mode", debug_mode);
+        std::cout << "debug_mode: " << debug_mode << std::endl;
 
         
         // pipeline parameters

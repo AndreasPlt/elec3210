@@ -52,6 +52,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
 }
 
 void OdomICP::run() {
+    auto started = std::chrono::high_resolution_clock::now();
     ros::Rate rate(1000);
     while (ros::ok()){
         if (cloudQueue.empty()){
@@ -175,6 +176,8 @@ void OdomICP::run() {
         publishResult();
         rate.sleep();
     }
+    auto done = std::chrono::high_resolution_clock::now();
+    std::cout << "ICP took the following time: " << std::chrono::duration_cast<std::chrono::seconds>(done-started).count() << "s" << std::endl;
 }
 
 void OdomICP::store_data(const std::vector<Pose>& data) {

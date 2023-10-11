@@ -17,7 +17,6 @@ Eigen::Matrix4d icp_registration(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, 
     icp.align(aligned_cloud, init_guess);
 
     Eigen::Matrix4d transformation = icp.getFinalTransformation().cast<double>();
-    std::cout << "Final error: " << icp.getError() << std::endl;
     return transformation;
 }
 

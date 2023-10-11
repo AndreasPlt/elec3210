@@ -50,6 +50,7 @@ namespace params {
     extern RejectMode reject_mode; // choices: none, threshold, percentage
     extern double reject_threshold; // should be > 0
     extern double reject_percentage; // should be in [0, 1]
+    extern bool debug_mode;
 
     // pipeline parameters
     extern UpdateMode update_mode; // choices: previous_frame, key_frame, map_mode
