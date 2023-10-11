@@ -10,7 +10,7 @@
 #include <math.h>
 #include <time.h>
 #include <pcl/filters/extract_indices.h>
-#include <algorithm> //std::sort
+#include <algorithm>
 #include <string.h>
 #include <vector>
 #include <float.h>
@@ -75,9 +75,9 @@ void OdomICP::run() {
             Twb_prev = Eigen::Matrix4d::Identity();
             deltaT_pred = Eigen::Matrix4d::Identity();
             *refCloud = *laserCloudIn;
-            continue;
             //store current time (For keyframe time mode)
             last_update_time = std::clock();
+            continue;
         }
 
         timer.tic();
@@ -406,8 +406,7 @@ void OdomICP::publishResult() {
 
 //    publish map
     sensor_msgs::PointCloud2 mapMsg;
-    pcl::toROSMsg(*mapCloud, mapMsg); //replace *refCloud with *mapCloud
-    std::cout << "mapCloud: " << mapCloud->size() << std::endl;
+    pcl::toROSMsg(*mapCloud, mapMsg); //replaced *refCloud with *mapCloud
     mapMsg.header.frame_id = "map";
     mapMsg.header.stamp = cloudHeader.stamp;
     map_pub.publish(mapMsg);
