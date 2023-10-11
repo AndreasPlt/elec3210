@@ -55,9 +55,11 @@ namespace params {
     extern UpdateMode update_mode; // choices: previous_frame, key_frame, map_mode
     extern KeyFrameMode key_frame_mode; // choices: time_mode, overlap_mode
     extern double time_threshold; // only used for key_frame mode
+    extern double overlap_threshold; // only used for key_frame mode
     extern int map_size;
     extern int map_range;
     extern RemoveMode remove_mode; // choices: euclidean_norm, inf_norm
+    extern int map_sample_size; // add #map_sample_size many points to map in each iteration
    
 
     void readParameters(const ros::NodeHandle &nh);

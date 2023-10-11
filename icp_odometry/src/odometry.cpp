@@ -10,8 +10,10 @@
 #include <math.h>
 #include <time.h>
 #include <pcl/filters/extract_indices.h>
-
+#include <algorithm> //std::sort
 #include <string.h>
+#include <vector>
+#include <float.h>
 
 
 
@@ -29,6 +31,7 @@ OdomICP::OdomICP(ros::NodeHandle &nh):
     deltaT_pred = Eigen::Matrix4d::Identity();
     laserCloudIn.reset(new pcl::PointCloud<pcl::PointXYZ>);
     refCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
+    mapCloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
 
 //    initialze downsample filter here
     const double scan_leaf_size = 0.5, map_leaf_size = 0.1;
@@ -131,6 +134,10 @@ void OdomICP::run() {
                     case params::OVERLAP_MODE:
                         //calculate bounding box for both point clouds
                         //maybe bounding boxes as approximation
+                        if ( calc_intersection() < params::overlap_threshold){
+                            //update keyframe
+                            pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                        }
                         break;
                 }
                 break;
@@ -164,6 +171,16 @@ void OdomICP::run() {
                     break;
                 }
         }
+        //store the scan in the map cloud
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
+        //downsample the scan to be memory efficient (100 points per scan)
+        pcl::RandomSample<pcl::PointXYZ> random_sample;
+        random_sample.setInputCloud(transformed_scan);
+        random_sample.setSample(params::map_sample_size);
+        random_sample.filter(*transformed_scan);
+        //add the scan to the map
+        *mapCloud += *transformed_scan;
 
         //tic toc lol
         timer.toc();
@@ -192,6 +209,68 @@ void OdomICP::store_data(const std::vector<Pose>& data) {
         infile << std::endl;
     }
     infile.close();
+}
+double OdomICP::calc_intersection(){
+    //lopp through point clouds and find max, min value for xyz
+    double ref_min_x = DBL_MAX, ref_min_y = DBL_MAX, ref_min_z = DBL_MAX;
+    double ref_max_x = -DBL_MAX, ref_max_y = -DBL_MAX, ref_max_z = -DBL_MAX;
+    double scan_min_x = DBL_MAX, scan_min_y = DBL_MAX, scan_min_z = DBL_MAX;
+    double scan_max_x = -DBL_MAX, scan_max_y = -DBL_MAX, scan_max_z = -DBL_MAX;
+
+    for(int i = 0; i < refCloud->size(); i++){
+        pcl::PointXYZ refcloud_point = refCloud->points[i];
+        if(refcloud_point.x < min_x){
+            min_x = refcloud_point.x;
+        }
+        if(refcloud_point.y < min_y){
+            min_y = refcloud_point.y;
+        }
+        if(refcloud_point.z < min_z){
+            min_z = refcloud_point.z;
+        }
+        if(refcloud_point.x > max_x){
+            max_x = refcloud_point.x;
+        }
+        if(refcloud_point.y > max_y){
+            max_y = refcloud_point.y;
+        }
+        if(refcloud_point.z > max_z){
+            max_z = refcloud_point.z;
+        }
+    }
+    for(int i = 0; i < laserCloudIn->size(); i++){
+        scancloud_point = laserCloudIn->points[i];
+        if(scancloud_point.x < min_x){
+            min_x = scancloud_point.x;
+        }
+        if(scancloud_point.y < min_y){
+            min_y = scancloud_point.y;
+        }
+        if(scancloud_point.z < min_z){
+            min_z = scancloud_point.z;
+        }
+        if(scancloud_point.x > max_x){
+            max_x = scancloud_point.x;
+        }
+        if(scancloud_point.y > max_y){
+            max_y = scancloud_point.y;
+        }
+        if(scancloud_point.z > max_z){
+            max_z = scancloud_point.z;
+        }
+    }
+    //calculate bounding box for the intersectioin of the two boxes
+    double intersection_min_x = std::max(ref_min_x, scan_min_x);
+    double intersection_min_y = std::max(ref_min_y, scan_min_y);
+    double intersection_min_z = std::max(ref_min_z, scan_min_z);
+    double intersection_max_x = std::min(ref_max_x, scan_max_x);
+    double intersection_max_y = std::min(ref_max_y, scan_max_y);
+    double intersection_max_z = std::min(ref_max_z, scan_max_z);
+    //calculate volume of intersection
+    double intersection_volume = (intersection_max_x - intersection_min_x) * (intersection_max_y - intersection_min_y) * (intersection_max_z - intersection_min_z);
+    //calculate volume of refCloud
+    double ref_volume = (ref_max_x - ref_min_x) * (ref_max_y - ref_min_y) * (ref_max_z - ref_min_z);
+    return intersection_volume/ref_volume;
 }
 void OdomICP::remove_euclidean(){
     // Get current position
@@ -274,7 +353,8 @@ void OdomICP::publishResult() {
 
 //    publish map
     sensor_msgs::PointCloud2 mapMsg;
-    pcl::toROSMsg(*refCloud, mapMsg);
+    pcl::toROSMsg(*mapCloud, mapMsg); //replace *refCloud with *mapCloud
+    std::cout << "mapCloud: " << mapCloud->size() << std::endl;
     mapMsg.header.frame_id = "map";
     mapMsg.header.stamp = cloudHeader.stamp;
     map_pub.publish(mapMsg);

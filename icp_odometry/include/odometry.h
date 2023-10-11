@@ -32,6 +32,7 @@ private:
     std_msgs::Header cloudHeader;
     pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn;
     pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr mapCloud;
     std::queue<std::pair<std_msgs::Header, sensor_msgs::PointCloud2ConstPtr>> cloudQueue;
 
     Eigen::Matrix4d Twb; // transformation from body to world
@@ -78,6 +79,8 @@ public:
     void remove_inf();
 
     void store_data(const std::vector<Pose>& data);
+
+    double calc_intersection();
 
     Eigen::Matrix4d euler_z(Eigen::Matrix4d R);
 

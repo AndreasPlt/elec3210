@@ -16,9 +16,11 @@ namespace params{
     UpdateMode update_mode = PREVIOUS_FRAME;
     KeyFrameMode key_frame_mode = TIME_MODE;
     double time_threshold = 0.001;
+    double overlap_threshold = 0.2;
     int map_size = 5000;
     int map_range = 5;
     RemoveMode remove_mode = INF_NORM;
+    int map_sample_size = 250;
     
     double transformation_epsilon = 1e-6;
     WeightMode weight_mode = UNIFORM;
@@ -62,6 +64,18 @@ namespace params{
         nh.getParam("/icp/map_range", map_range);
         // add assert
         std::cout << "map_range: " << map_range << std::endl;
+
+        nh.getParam("/icp/map_sample_size", map_sample_size);
+        // add assert
+        std::cout << "map_sample_size" << map_sample_size << std::endl;
+
+        nh.getParam("/icp/time_threshold", time_threshold);
+        // add assert
+        std::cout << "time_threshold: " << time_threshold << std::endl;
+
+        nh.getParam("/icp/overlap_threshold", overlap_threshold);
+        // add assert
+        std::cout << "overlap_threshold: " << overlap_threshold << std::endl;
 
     
         readUpdateMode(nh);
