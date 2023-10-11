@@ -99,9 +99,9 @@ void OdomICP::run() {
         Eigen::Matrix4d Twb_prev_inv = Eigen::Matrix4d::Identity();
         Twb_prev_inv.block<3,3>(0,0) = Twb.block<3,3>(0,0).transpose();
         Twb_prev_inv.block<3,1>(0,3) = -Twb.block<3,3>(0,0).transpose() * Twb.block<3,1>(0,3);
-        // Get T_{w->c} with old laserCloud, initial guess is the last T_{p->c} 
+        // Get T_{w->c} with old laserCloud, initial guess is the last T_{p->c} transformed with the last deltaT_pred (assuming we we have the same motion as last time)
         Twb = icp_registration(laserCloud_filtered, refCloud_filtered, deltaT_pred * Twb);
-        // Calucalte delta for next initial guess ( based on constant motion model)
+        // Calucalte delta for next initial guess (based on constant motion model)
         deltaT_pred = Twb * Twb_prev_inv;
         // extract the rotation on the z-axis 
         double phi = std::atan2(Twb(1,0),Twb(0,0));
@@ -111,6 +111,7 @@ void OdomICP::run() {
         euler_z(0,1) = -std::sin(phi);
         euler_z(1,1) = std::cos(phi);
         Twb.block<3,3>(0,0) = euler_z;
+        // no movement on the z-axis
         Twb(2,3) = 0;
 
         // transform the scan and store in ref cloud for publishing
@@ -133,11 +134,11 @@ void OdomICP::run() {
                         break;
 
                     case params::OVERLAP_MODE:
-                        //calculate bounding box for both point clouds
-                        //maybe bounding boxes as approximation
+                        //calculate bounding box intersection for both point clouds
                         if ( calc_intersection() < params::overlap_threshold){
                             //update keyframe
                             pcl::transformPointCloud(*laserCloudIn, *refCloud, Twb.cast<float>());
+                            std::cout << "updated refCloud" << std::endl;
                         }
                         break;
                 }
@@ -155,16 +156,18 @@ void OdomICP::run() {
                     pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
                     // Extend map
                     *refCloud += *transformed_scan;
-                    // Get current position
-                    
+                    // remove points that are too far away from current position
                     switch(params::remove_mode){
+                        // remove points based on 2-norm
                         case params::EUCLIDEAN_NORM:
                             remove_euclidean();
                             break;
                         case params::INF_NORM:
+                        // remove points based on inf-norm
                             remove_inf();
                             break;
                     }
+                    // downsample the map to a given map size
                     pcl::RandomSample<pcl::PointXYZ> random_sample;
                     random_sample.setInputCloud(refCloud);
                     random_sample.setSample(params::map_size);
@@ -172,6 +175,7 @@ void OdomICP::run() {
                     break;
                 }
         }
+
         //store the scan in the map cloud
         pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
@@ -196,7 +200,16 @@ void OdomICP::run() {
     auto done = std::chrono::high_resolution_clock::now();
     std::cout << "ICP took the following time: " << std::chrono::duration_cast<std::chrono::seconds>(done-started).count() << "s" << std::endl;
 }
-
+/**
+ * @brief Store a vector of poses in a text file.
+ *
+ * This function appends the provided poses and their timestamps to a text file
+ * located at the specified path.
+ *
+ * @param data A vector of Pose objects to be stored.
+ * @note The file is opened in append mode, so existing data is preserved.
+ * @warning If the file does not exist, it will be created.
+ */
 void OdomICP::store_data(const std::vector<Pose>& data) {
     std::string s = WORK_SPACE_PATH + "/../dataset/est_trajectory.txt"; 
     const char* filename = s.c_str(); 
@@ -213,13 +226,26 @@ void OdomICP::store_data(const std::vector<Pose>& data) {
     }
     infile.close();
 }
+/**
+ * @brief Calculate the intersection ratio between two point clouds.
+ *
+ * This function calculates the intersection ratio between a reference point cloud
+ * and a transformed scan point cloud. It does this by finding the bounding boxes
+ * of both clouds and computing the volume of their intersection.
+ *
+ * @return The ratio of the volume of intersection to the volume of the reference cloud.
+ * @note The function assumes that the point clouds are already loaded and transformed.
+ */
 double OdomICP::calc_intersection(){
-    //lopp through point clouds and find max, min value for xyz
+    //initialize with maxvalues
     double ref_min_x = DBL_MAX, ref_min_y = DBL_MAX, ref_min_z = DBL_MAX;
     double ref_max_x = -DBL_MAX, ref_max_y = -DBL_MAX, ref_max_z = -DBL_MAX;
     double scan_min_x = DBL_MAX, scan_min_y = DBL_MAX, scan_min_z = DBL_MAX;
     double scan_max_x = -DBL_MAX, scan_max_y = -DBL_MAX, scan_max_z = -DBL_MAX;
-
+    //transfrom the current Scan
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_scan(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::transformPointCloud(*laserCloudIn, *transformed_scan, Twb.cast<float>());
+    // compute bounding box for refCloud
     for(int i = 0; i < refCloud->size(); i++){
         pcl::PointXYZ refcloud_point = refCloud->points[i];
         if(refcloud_point.x < ref_min_x){
@@ -241,8 +267,9 @@ double OdomICP::calc_intersection(){
             ref_max_z = refcloud_point.z;
         }
     }
-    for(int i = 0; i < laserCloudIn->size(); i++){
-        pcl::PointXYZ scancloud_point = laserCloudIn->points[i];
+    // compute bounding box for the transformed scan
+    for(int i = 0; i < transformed_scan->size(); i++){
+        pcl::PointXYZ scancloud_point = transformed_scan->points[i];
         if(scancloud_point.x < scan_min_x){
             scan_min_x = scancloud_point.x;
         }
@@ -276,6 +303,16 @@ double OdomICP::calc_intersection(){
     std::cout << "Interscetion ratio: " << intersection_volume/ref_volume << std::endl;
     return intersection_volume/ref_volume;
 }
+/**
+ * @brief Remove points from the reference cloud based on Euclidean distance.
+ *
+ * This function removes points from the reference point cloud that are beyond a specified
+ * Euclidean distance from the current position.
+ *
+ * @note The function assumes that `refCloud` is already initialized and contains valid data.
+ * @note The parameter `params::map_range` determines the maximum allowed distance for points
+ * to be retained.
+ */
 void OdomICP::remove_euclidean(){
     // Get current position
     pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
@@ -283,6 +320,7 @@ void OdomICP::remove_euclidean(){
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
     pcl::ExtractIndices<pcl::PointXYZ> extract;
     for(int i = 0; i < refCloud->size(); i++){
+        // compute euclidean distance and compare to map_range
         if(std::sqrt(std::pow(refCloud->points[i].x - current_position.x, 2) + std::pow(refCloud->points[i].y - current_position.y, 2) + std::pow(refCloud->points[i].z - current_position.z, 2)) > params::map_range){
             inliers->indices.push_back(i); 
         }
@@ -292,20 +330,31 @@ void OdomICP::remove_euclidean(){
     extract.setNegative(true);
     extract.filter(*refCloud);
 }
-
+/**
+ * @brief Remove points from the reference cloud that fall outside a specified range.
+ *
+ * This function removes points from the reference point cloud that have coordinates
+ * falling outside a specified range around the current position.
+ *
+ * @note The function assumes that `refCloud` is already initialized and contains valid data.
+ * @note The parameter `params::map_range` determines the allowed range around the current position.
+ */
 void OdomICP::remove_inf(){
     // Get current position
     pcl::PointXYZ current_position(Twb(0,3), Twb(1,3), Twb(2,3));
     // remove all points in refCloud with one coordinate larger than current position + map_range
     pcl::PassThrough<pcl::PointXYZ> pass;
+    // filter based on x
     pass.setInputCloud(refCloud);
     pass.setFilterFieldName("x");
     pass.setFilterLimits(current_position.x - params::map_range, current_position.x + params::map_range);
     pass.filter(*refCloud);
+    // filter based on y
     pass.setInputCloud(refCloud);
     pass.setFilterFieldName("y");
     pass.setFilterLimits(current_position.y - params::map_range, current_position.y + params::map_range);
     pass.filter(*refCloud);
+    // filter based on z
     pass.setInputCloud(refCloud);
     pass.setFilterFieldName("z");
     pass.setFilterLimits(current_position.z - params::map_range, current_position.z + params::map_range);
