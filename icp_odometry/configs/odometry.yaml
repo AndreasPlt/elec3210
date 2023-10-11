@@ -21,4 +21,7 @@ icp:
   map_size : 10000 # amount of points in the map
   map_range : 55 # maximum distance from robot to map points
   remove_mode: euclidean_norm # choices: euclidean_norm, inf_norm
+
+  # Visualization
+  map_sample_size : 250 #sample size of every scan that is added to the global map for the visualization
   
