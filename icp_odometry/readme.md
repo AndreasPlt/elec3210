@@ -74,7 +74,7 @@ To run the project, follow these steps:
 1. Execute the following commands:
    ```
    catkin_make
-   source ./devel/setup.zsh
+   source ./devel/setup.sh
    roslaunch icp_odometry icp.launch
    ```
 
