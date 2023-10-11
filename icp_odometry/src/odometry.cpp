@@ -170,7 +170,6 @@ void OdomICP::run() {
         //4.5 store trajectory
         std::vector<Pose> est;
         est.push_back({cloudHeader.stamp.toSec(), Twb});
-        std::cout << filename << std::endl;
         store_data(est);
         // 5. publish result
         publishResult();
