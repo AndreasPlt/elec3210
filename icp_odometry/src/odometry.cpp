@@ -219,44 +219,44 @@ double OdomICP::calc_intersection(){
 
     for(int i = 0; i < refCloud->size(); i++){
         pcl::PointXYZ refcloud_point = refCloud->points[i];
-        if(refcloud_point.x < min_x){
-            min_x = refcloud_point.x;
+        if(refcloud_point.x < ref_min_x){
+            ref_min_x = refcloud_point.x;
         }
-        if(refcloud_point.y < min_y){
-            min_y = refcloud_point.y;
+        if(refcloud_point.y < ref_min_y){
+            ref_min_y = refcloud_point.y;
         }
-        if(refcloud_point.z < min_z){
-            min_z = refcloud_point.z;
+        if(refcloud_point.z < ref_min_z){
+            ref_min_z = refcloud_point.z;
         }
-        if(refcloud_point.x > max_x){
-            max_x = refcloud_point.x;
+        if(refcloud_point.x > ref_max_x){
+            ref_max_x = refcloud_point.x;
         }
-        if(refcloud_point.y > max_y){
-            max_y = refcloud_point.y;
+        if(refcloud_point.y > ref_max_y){
+            ref_max_y = refcloud_point.y;
         }
-        if(refcloud_point.z > max_z){
-            max_z = refcloud_point.z;
+        if(refcloud_point.z > ref_max_z){
+            ref_max_z = refcloud_point.z;
         }
     }
     for(int i = 0; i < laserCloudIn->size(); i++){
-        scancloud_point = laserCloudIn->points[i];
-        if(scancloud_point.x < min_x){
-            min_x = scancloud_point.x;
+        pcl::PointXYZ scancloud_point = laserCloudIn->points[i];
+        if(scancloud_point.x < scan_min_x){
+            scan_min_x = scancloud_point.x;
         }
-        if(scancloud_point.y < min_y){
-            min_y = scancloud_point.y;
+        if(scancloud_point.y < scan_min_y){
+            scan_min_y = scancloud_point.y;
         }
-        if(scancloud_point.z < min_z){
-            min_z = scancloud_point.z;
+        if(scancloud_point.z < scan_min_z){
+            scan_min_z = scancloud_point.z;
         }
-        if(scancloud_point.x > max_x){
-            max_x = scancloud_point.x;
+        if(scancloud_point.x >scan_max_x){
+            scan_max_x = scancloud_point.x;
         }
-        if(scancloud_point.y > max_y){
-            max_y = scancloud_point.y;
+        if(scancloud_point.y > scan_max_y){
+            scan_max_y = scancloud_point.y;
         }
-        if(scancloud_point.z > max_z){
-            max_z = scancloud_point.z;
+        if(scancloud_point.z > scan_max_z){
+            scan_max_z = scancloud_point.z;
         }
     }
     //calculate bounding box for the intersectioin of the two boxes
@@ -270,6 +270,7 @@ double OdomICP::calc_intersection(){
     double intersection_volume = (intersection_max_x - intersection_min_x) * (intersection_max_y - intersection_min_y) * (intersection_max_z - intersection_min_z);
     //calculate volume of refCloud
     double ref_volume = (ref_max_x - ref_min_x) * (ref_max_y - ref_min_y) * (ref_max_z - ref_min_z);
+    std::cout << "Interscetion ratio: " << intersection_volume/ref_volume << std::endl;
     return intersection_volume/ref_volume;
 }
 void OdomICP::remove_euclidean(){
