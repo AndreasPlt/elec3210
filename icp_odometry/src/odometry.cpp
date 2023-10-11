@@ -115,6 +115,7 @@ void OdomICP::run() {
         Twb(2,3) = 0;
 
         // transform the scan and store in ref cloud for publishing
+        // Choose pipeline to update refCloud
         switch(params::update_mode){
             //previous frame mode
             case params::PREVIOUS_FRAME: 
@@ -300,7 +301,6 @@ double OdomICP::calc_intersection(){
     double intersection_volume = (intersection_max_x - intersection_min_x) * (intersection_max_y - intersection_min_y) * (intersection_max_z - intersection_min_z);
     //calculate volume of refCloud
     double ref_volume = (ref_max_x - ref_min_x) * (ref_max_y - ref_min_y) * (ref_max_z - ref_min_z);
-    std::cout << "Interscetion ratio: " << intersection_volume/ref_volume << std::endl;
     return intersection_volume/ref_volume;
 }
 /**

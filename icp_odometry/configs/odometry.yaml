@@ -5,20 +5,20 @@ icp:
   transformation_epsilon: 0.01
   weight_mode: distance_inverse # choices: distance_inverse, distance_max_scaling, uniform
   reject_mode: none # choices: none, threshold, percentage
-  reject_percentage: 0.1
-  reject_threshold: 5
+  reject_percentage: 0.1 # for icp pair rejection 
+  reject_threshold: 5 # for icp pair rejection
   debug_mode: false # choices: true, false
 
-  # Refernce cloud settings
+  # Pipeline settings
   update_mode : key_frame  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
   key_frame_mode : overlap_mode # choices: time_mode, overlap_mode
-  time_threshold : 0.001 # only used for key frame mode
-  overlap_threshold: 0.99
+  time_threshold : 0.001 # used for key frame mode and map mode / time between key frame updates
+  overlap_threshold: 0.99 # only used for key frame mode / minimum overlap between key frames
 
   # Map settings
-  map_size : 10000
-  map_range : 55 
+  map_size : 10000 # amount of points in the map
+  map_range : 55 # maximum distance from robot to map points
   remove_mode: euclidean_norm # choices: euclidean_norm, inf_norm
   
