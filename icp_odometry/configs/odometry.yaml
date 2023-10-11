@@ -3,22 +3,25 @@ icp:
   max_distance: 16
   max_iterations: 100
   transformation_epsilon: 0.01
-  weight_mode: distance_inverse # choices: distance_inverse, distance_max_scaling, uniform
+  weight_mode: uniform # choices: distance_inverse, distance_max_scaling, uniform
   reject_mode: none # choices: none, threshold, percentage
   reject_percentage: 0.1 # for icp pair rejection 
   reject_threshold: 5 # for icp pair rejection
   debug_mode: false # choices: true, false
 
   # Refernce cloud settings
-  update_mode : map_mode  # choices: previous_frame, key_frame, map_mode
+  update_mode : key_frame  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
   key_frame_mode : time_mode # choices: time_mode, overlap_mode
-  time_threshold : 0.1 # only used for key frame mode (time)
-  overlap_threshold: 0.98 # only used for key frame mode (overlap)
+  time_threshold : 0.01 # used for key frame mode and map mode / time between key frame updates
+  overlap_threshold: 0.99 # only used for key frame mode / minimum overlap between key frames
 
   # Map settings
   map_size : 10000 # amount of points in the map
   map_range : 55 # maximum distance from robot to map points
   remove_mode: euclidean_norm # choices: euclidean_norm, inf_norm
+
+  # Visualization
+  map_sample_size : 250 #sample size of every scan that is added to the global map for the visualization
   

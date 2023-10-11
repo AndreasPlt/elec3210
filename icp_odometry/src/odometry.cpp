@@ -406,6 +406,8 @@ void OdomICP::publishResult() {
 
 //    publish map
     sensor_msgs::PointCloud2 mapMsg;
+    // to show local map only: replace *mapCloud with *refCloud
+    // to show global map: replace *refCloud with *mapCloud
     pcl::toROSMsg(*mapCloud, mapMsg); //replaced *refCloud with *mapCloud
     mapMsg.header.frame_id = "map";
     mapMsg.header.stamp = cloudHeader.stamp;

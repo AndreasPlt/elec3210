@@ -11,6 +11,13 @@ namespace params{
 
     // icp parameters
     int max_iterations = 100;
+    double max_distance = 100000;
+    double transformation_epsilon = 1e-6;
+    WeightMode weight_mode = UNIFORM;
+    RejectMode reject_mode = THRESHOLD;
+    double reject_threshold = 5;
+    double reject_percentage = 0.1;
+    bool debug_mode = false;
 
     UpdateMode update_mode = PREVIOUS_FRAME;
     KeyFrameMode key_frame_mode = TIME_MODE;
@@ -20,14 +27,6 @@ namespace params{
     int map_range = 5;
     RemoveMode remove_mode = INF_NORM;
     int map_sample_size = 250;
-    
-    double max_distance = 100000;
-    double transformation_epsilon = 1e-6;
-    WeightMode weight_mode = UNIFORM;
-    RejectMode reject_mode = THRESHOLD;
-    double reject_threshold = 5;
-    double reject_percentage = 0.1;
-    bool debug_mode = false;
 
     void readParameters(const ros::NodeHandle& nh){
         std::cout << "Reading parameters..." << std::endl;
@@ -62,23 +61,18 @@ namespace params{
         
         // pipeline parameters
         nh.getParam("/icp/map_size", map_size);
-        // add assert
         std::cout << "map_size: " << map_size << std::endl;
 
         nh.getParam("/icp/map_range", map_range);
-        // add assert
         std::cout << "map_range: " << map_range << std::endl;
 
         nh.getParam("/icp/map_sample_size", map_sample_size);
-        // add assert
         std::cout << "map_sample_size" << map_sample_size << std::endl;
 
         nh.getParam("/icp/time_threshold", time_threshold);
-        // add assert
         std::cout << "time_threshold: " << time_threshold << std::endl;
 
         nh.getParam("/icp/overlap_threshold", overlap_threshold);
-        // add assert
         std::cout << "overlap_threshold: " << overlap_threshold << std::endl;
 
     
