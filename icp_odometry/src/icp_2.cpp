@@ -10,12 +10,6 @@ icp_2::icp_2():
     src_cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>), 
     src_cloud(new pcl::PointCloud<pcl::PointXYZ>), 
     tar_cloud(new pcl::PointCloud<pcl::PointXYZ>) {
-    
-    assert (params::transformation_epsilon > 0);
-    assert (params::max_iterations > 0);
-    assert (params::max_distance > 0);
-    assert (params::reject_percentage >= 0 && params::reject_percentage <= 1);
-
 }
 
 // setter functions
@@ -29,15 +23,12 @@ void icp_2::setInputTarget(pcl::PointCloud<pcl::PointXYZ>::Ptr _tar_cloud){
     this->tar_tree.setInputCloud(this->tar_cloud);
 }
 
-
 // getter functions
 Eigen::Matrix4d icp_2::getFinalTransformation(){
-    // TODO
     return final_transformation;
 }
 
 double icp_2::getError(){
-    // TODO
     pcl::transformPointCloud(*src_cloud, *src_cloud_transformed, getFinalTransformation());
     determine_corresponding_points();
     weight_pairs();
@@ -127,6 +118,20 @@ Eigen::Matrix4d icp_2::compute_transformation() {
     return transformation;
 }
 
+double icp_2::_get_error(Eigen::Matrix4d iter_transformation){
+    double error = 0.0;
+    Eigen::Affine3d transformation_affine;
+    transformation_affine.matrix() = iter_transformation;
+
+    for (const auto& pair: correspondence_pairs) {
+        const pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, transformation_affine);
+        error += pair.weight * pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
+    }
+
+    return error;
+}
+
+
 // weighting functions 
 void icp_2::weight_pairs() {
     switch(params::weight_mode){
@@ -155,7 +160,6 @@ void icp_2::weight_pairs_max_dist_scaling(){
     // scale weights
     for (auto &pair: correspondence_pairs) {
         pair.weight = 1 - (pair.distance / max_val);
-        //pair.weight = 1 / (pair.distance + 1);
     }
 }
 
@@ -195,7 +199,7 @@ void icp_2::reject_pairs_percentage(){
     // load percentage
     double percentage = params::reject_percentage;
 
-    //sort the pairs by distance using a lambda function
+    // sort the pairs by distance using a lambda function
     std::sort(correspondence_pairs.begin(), correspondence_pairs.end(),
               [](const correspondence_pair_2& pair1, const correspondence_pair_2& pair2) {
                   return pair1.distance < pair2.distance;
@@ -209,7 +213,7 @@ void icp_2::reject_pairs_percentage(){
 }
 
 // public function
-void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d init_guess){
+void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d init_guess = Eigen::Matrix4d::Identity()){
     Eigen::Matrix4d iter_transformation;
 
     final_transformation = init_guess;
@@ -230,6 +234,7 @@ void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d in
         iter_transformation = compute_transformation();
         error = _get_error(iter_transformation);
 
+        // check convergence criteria
         if (error > prev_error){
             break_reason = "Error increased";
             break;
@@ -238,7 +243,7 @@ void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d in
             break_reason = "Error converged";
             break;
         }
-
+        // update error and transformation
         prev_error = error;
         final_transformation = iter_transformation * final_transformation;
     }
@@ -247,15 +252,3 @@ void icp_2::align(pcl::PointCloud<pcl::PointXYZ>::Ptr output, Eigen::Matrix4d in
     pcl::transformPointCloud(*src_cloud, *output, final_transformation);
 }
 
-double icp_2::_get_error(Eigen::Matrix4d iter_transformation){
-    double error = 0.0;
-    Eigen::Affine3d transformation_affine;
-    transformation_affine.matrix() = iter_transformation;
-
-    for (const auto& pair: correspondence_pairs) {
-        const pcl::PointXYZ transformed_point = pcl::transformPoint(pair.src_point, transformation_affine);
-        error += pair.weight * pcl::squaredEuclideanDistance(pair.tar_point, transformed_point);
-    }
-
-    return error;
-}

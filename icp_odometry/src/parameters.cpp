@@ -31,18 +31,23 @@ namespace params{
         
         // icp parameters
         nh.getParam("/icp/max_iterations", max_iterations);
+        assert(max_iterations > 0);
         std::cout << "max_iterations: " << max_iterations << std::endl;
     
         nh.getParam("/icp/max_distance", max_distance);
+        assert(max_distance > 0);
         std::cout << "max_distance: " << max_distance << std::endl;
 
         nh.getParam("/icp/transformation_epsilon", transformation_epsilon);
+        assert(transformation_epsilon > 0);
         std::cout << "transformation_epsilon: " << transformation_epsilon << std::endl;
 
         nh.getParam("/icp/reject_threshold", reject_threshold);
+        assert(reject_threshold > 0)
         std::cout << "reject_threshold: " << reject_threshold << std::endl;
 
         nh.getParam("/icp/reject_percentage", reject_percentage);
+        assert(reject_percentage >= 0 && reject_percentage <= 1);
         std::cout << "reject_percentage: " << reject_percentage << std::endl;
 
         readWeightMode(nh);
@@ -51,9 +56,11 @@ namespace params{
         
         // pipeline parameters
         nh.getParam("/icp/map_size", map_size);
+        // add assert
         std::cout << "map_size: " << map_size << std::endl;
 
         nh.getParam("/icp/map_range", map_range);
+        // add assert
         std::cout << "map_range: " << map_range << std::endl;
 
     
