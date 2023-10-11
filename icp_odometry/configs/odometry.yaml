@@ -10,11 +10,11 @@ icp:
   debug_mode: false # choices: true, false
 
   # Pipeline settings
-  update_mode : key_frame  # choices: previous_frame, key_frame, map_mode
+  update_mode : map_mode  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
   key_frame_mode : overlap_mode # choices: time_mode, overlap_mode
-  time_threshold : 0.1 # used for key frame mode and map mode / time between key frame updates
+  time_threshold : 0.01 # used for key frame mode and map mode / time between key frame updates
   overlap_threshold: 0.99 # only used for key frame mode / minimum overlap between key frames
 
   # Map settings
