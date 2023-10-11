@@ -6,6 +6,7 @@ icp:
   weight_mode: distance_inverse # choices: distance_inverse, distance_max_scaling, uniform
   reject_mode: none # choices: none, threshold, percentage
   reject_percentage: 0.1
+  reject_threshold: 5
   debug_mode: false # choices: true, false
 
   # Refernce cloud settings

@@ -189,7 +189,7 @@ void icp_2::reject_pairs() {
 void icp_2::reject_pairs_threshold(){
     // load threshold
     for (auto &pair: correspondence_pairs) {
-        if (pair.distance > params::max_distance) {
+        if (pair.distance > params::reject_threshold) {
             pair.weight = 0;
         }
     }

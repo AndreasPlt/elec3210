@@ -10,7 +10,6 @@
 namespace params{
 
     // icp parameters
-    double max_distance = 100000;
     int max_iterations = 100;
 
     UpdateMode update_mode = PREVIOUS_FRAME;
@@ -22,10 +21,11 @@ namespace params{
     RemoveMode remove_mode = INF_NORM;
     int map_sample_size = 250;
     
+    double max_distance = 100000;
     double transformation_epsilon = 1e-6;
     WeightMode weight_mode = UNIFORM;
     RejectMode reject_mode = THRESHOLD;
-    double reject_threshold = 0.1;
+    double reject_threshold = 5;
     double reject_percentage = 0.1;
     bool debug_mode = false;
 

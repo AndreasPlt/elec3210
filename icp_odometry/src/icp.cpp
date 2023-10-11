@@ -32,7 +32,7 @@ Eigen::Matrix4d icp_registration_pcl(pcl::PointCloud<pcl::PointXYZ>::Ptr src_clo
     icp.setInputTarget(tar_cloud);
     icp.setMaximumIterations(params::max_iterations);  // set maximum iteration
     icp.setTransformationEpsilon(1e-6);  // set transformation epsilon
-    icp.setMaxCorrespondenceDistance(params::max_distance);  // set maximum correspondence distance
+    icp.setMaxCorrespondenceDistance(params::reject_threshold);  // set maximum correspondence distance
     pcl::PointCloud<pcl::PointXYZ> aligned_cloud;
     icp.align(aligned_cloud, init_guess.cast<float>());
 
