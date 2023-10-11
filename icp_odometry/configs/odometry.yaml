@@ -12,8 +12,9 @@ icp:
   update_mode : key_frame  # choices: previous_frame, key_frame, map_mode
 
   # Key frame settings
-  key_frame_mode : time_mode # choices: time_mode, overlap_mode
+  key_frame_mode : overlap_mode # choices: time_mode, overlap_mode
   time_threshold : 0.001 # only used for key frame mode
+  overlap_threshold: 0.98
 
   # Map settings
   map_size : 10000
