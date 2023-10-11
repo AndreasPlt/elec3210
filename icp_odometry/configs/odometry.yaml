@@ -4,9 +4,9 @@ icp:
   max_iterations: 100
   transformation_epsilon: 0.01
   weight_mode: uniform # choices: distance_inverse, distance_max_scaling, uniform
-  reject_mode: none # choices: none, threshold, percentage
+  reject_mode: percentage # choices: none, threshold, percentage
   reject_percentage: 0.1 # for icp pair rejection 
-  reject_threshold: 5 # for icp pair rejection
+  reject_threshold: 25 # for icp pair rejection
   debug_mode: false # choices: true, false
 
   # Pipeline settings

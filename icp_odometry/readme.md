@@ -18,7 +18,7 @@ This Lidar odometry project is based on the Point-to-Point ICP (Iterative Closes
 
 ## Files
 
-### Config
+### Config: odometry.yaml
 
 #### ICP Settings:
 
@@ -72,7 +72,7 @@ This file reads the parameters from the config.
 To run the project, follow these steps:
 
 1. Execute the following commands:
-   ```
+   ```shell
    catkin_make
    source ./devel/setup.sh
    roslaunch icp_odometry icp.launch
