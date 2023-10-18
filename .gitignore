@@ -1,6 +1,6 @@
 /dataset
 .vscode
 .ds_store
-.DS_store
+.DS_Store
 *default_2.rviz
 *execute.sh
