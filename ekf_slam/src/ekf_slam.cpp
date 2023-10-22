@@ -151,6 +151,18 @@ void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& I
 	/**
 	 * TODO: implement the function
 	 */
+
+    int state_size = mState.rows();
+
+    Eigen::VectorXd new_state = Eigen::VectorXd::Zero(state_size + 2);
+    new_state.segment(0, state_size) = mState;
+    new_state.segment(state_size, 2) = lm;
+    mState = new_state;
+
+    Eigen::MatrixXd new_cov = Eigen::MatrixXd::Zero(state_size + 2, state_size + 2);
+    new_cov.block(0, 0, state_size, state_size) = mCov;
+    new_cov.block(state_size, state_size, 2, 2) = InitCov;
+    mCov = new_cov;
 }
 
 void EKFSLAM::accumulateMap(){
@@ -167,7 +179,6 @@ void EKFSLAM::accumulateMap(){
 }
 
 void EKFSLAM::updateMeasurement(){
-
     cylinderPoints = extractCylinder->extract(laserCloudIn, cloudHeader); // 2D pole centers in the laser/body frame
     Eigen::Vector3d xwb = mState.block<3, 1>(0, 0); // pose in the world frame
     int num_landmarks = (mState.rows() - 3) / 2; // number of landmarks in the state vector
