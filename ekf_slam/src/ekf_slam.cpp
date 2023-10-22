@@ -107,10 +107,6 @@ double EKFSLAM::normalizeAngle(double angle){
 Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
 	int num_state = state.rows();
 	Eigen::MatrixXd Gt = Eigen::MatrixXd::Identity(num_state, num_state);
-	/**
-	 * TODO: implement the Jacobian Gt
-	 */
-	return Gt;
 }
 
 Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
@@ -129,6 +125,29 @@ Eigen::MatrixXd EKFSLAM::jacobB(const Eigen::VectorXd& state, Eigen::Vector2d ut
 	B(1, 0) = dt * sin(state(2));
 	B(2, 1) = dt;
 	return B;
+}
+
+Eigen::MatrixXd EKFSLAM:calc_H(const Eigen::Vector2d& pt){
+    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(2, 5);
+    Eigen::Vector2d delta = pt - z<2, 1>(idx * 2, 0);
+    H(0, 0) = -delta.norm() * pt.x;
+    H(0, 1) = -delta.norm() * pt.y;
+    H(0, 2) = 0;
+    H(0, 3) = -H(0,0);
+    H(0, 4) = -H(0,1);
+    H(1, 0) = pt.y;
+    H(1, 1) = -pt.x;
+    H(1, 2) = -delta.norm()*delta.norm();
+    H(1, 3) = -H(1,0);
+    H(1, 4) = -H(1,1);
+    return H * calc_F(state, idx);
+}
+
+Eigen::MatrixXd EKFSLAM::calc_F(const Eigen::VectorXd& state, int idx){
+    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, state.rows()-3);
+    F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+    F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
+    return F;
 }
 
 void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::Vector2d ut, double dt){
@@ -185,12 +204,25 @@ void EKFSLAM::updateMeasurement(){
     int num_obs = cylinderPoints.rows(); // number of observations
     Eigen::VectorXi indices = Eigen::VectorXi::Ones(num_obs) * -1; // indices of landmarks in the state vector
     for (int i = 0; i < num_obs; ++i) {
-        Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i), xwb); // 2D pole center in the world frame
-		// Implement the data association here, i.e., find the corresponding landmark for each observation
-		/**
-		 * TODO: data association
-		 *
-		 * **/
+        //start with naive correspondence: search the nearest neighbor for every observation
+        // if we already mapped an observation for every landmark, the rest of the observations are new
+        if(i < num_landmarks){
+            // get current coordinates in world frame
+            Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
+            min_idx = -1;
+            min_dist = 99999;
+            // naive n^2 complexity
+            for(int j = 0; j < num_landmarks; ++j){
+                Eigen::Vector2d landmark = mState.block<2, 1>(3 + j * 2, 0);
+                // calc euclidean distance between the points
+                double dist = (pt_transformed - landmark).norm();
+                if(dist < min_dist){
+                    min_dist = dist;
+                    min_idx = j;
+                }
+            }
+            indieces(i) = min_idx;
+        }
         if (indices(i) == -1){
             indices(i) = ++globalId;
             addNewLandmark(pt_transformed, Q);
@@ -199,10 +231,12 @@ void EKFSLAM::updateMeasurement(){
     // simulating bearing model
     Eigen::VectorXd z = Eigen::VectorXd::Zero(2 * num_obs);
     for (int i = 0; i < num_obs; ++i) {
+        // cylinder points are measured relative so they are already the delta
         const Eigen::Vector2d& pt = cylinderPoints.row(i);
         z(2 * i, 0) = pt.norm();
-        z(2 * i + 1, 0) = atan2(pt(1), pt(0));
-    }
+        // minus mü ?
+        z(2 * i + 1, 0) = atan2(pt(1), pt(0)) - xwb(2); // manually added xwb(2)
+    } 
     // update the measurement vector
     num_landmarks = (mState.rows() - 3) / 2;
     for (int i = 0; i < num_obs; ++i) {
@@ -210,9 +244,10 @@ void EKFSLAM::updateMeasurement(){
         if (idx == -1 || idx + 1 > num_landmarks) continue;
         const Eigen::Vector2d& landmark = mState.block<2, 1>(3 + idx * 2, 0);
 		// Implement the measurement update here, i.e., update the state vector and covariance matrix
-		/**
-		 * TODO: measurement update
-		 */
+        H = calc_H(z, idx, cylinderPoints.row(i).transpose());
+        K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
+        mState = mState + K * (z - calc_z(mState, idx));
+        mCov = (Eigen::MatrixXd::Identity(mState.rows(), mState.rows()) - K * H) * mCov;
     }
 }
 
