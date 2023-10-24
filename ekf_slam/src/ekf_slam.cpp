@@ -34,8 +34,8 @@ EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
 	 * TODO: initialize the state vector and covariance matrix
 	 */
     mState = Eigen::VectorXd::Zero(3); // x, y, yaw
-    mCov = mCov;
-    R = R; // process noise
+    mCov = Eigen::MatrixXd::Zero(1, 1);
+    R = Eigen::Matrix; // process noise
     Q = Q; // measurement noise
 
     std::cout << "EKF SLAM initialized" << std::endl;
@@ -221,7 +221,7 @@ void EKFSLAM::updateMeasurement(){
                     min_idx = j;
                 }
             }
-            indieces(i) = min_idx;
+            indices(i) = min_idx;
         }
         if (indices(i) == -1){
             indices(i) = ++globalId;
@@ -244,8 +244,8 @@ void EKFSLAM::updateMeasurement(){
         if (idx == -1 || idx + 1 > num_landmarks) continue;
         const Eigen::Vector2d& landmark = mState.block<2, 1>(3 + idx * 2, 0);
 		// Implement the measurement update here, i.e., update the state vector and covariance matrix
-        H = calc_H(z, idx, cylinderPoints.row(i).transpose());
-        K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
+        Eigen::MatrixXd H = calc_H(z, idx, cylinderPoints.row(i).transpose());
+        Eigen::MatrixXd K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
         mState = mState + K * (z - calc_z(mState, idx));
         mCov = (Eigen::MatrixXd::Identity(mState.rows(), mState.rows()) - K * H) * mCov;
     }
