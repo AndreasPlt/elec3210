@@ -107,6 +107,13 @@ double EKFSLAM::normalizeAngle(double angle){
 Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
 	int num_state = state.rows();
 	Eigen::MatrixXd Gt = Eigen::MatrixXd::Identity(num_state, num_state);
+	double vx = ut(0);
+    	double theta = state(2);
+
+    	// Calculate the elements of Gt
+    	Gt(0, 2) = -vx * sin(theta);
+    	Gt(1, 2) = vx * cos(theta); 
+	return Gt;
 }
 
 Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
@@ -115,6 +122,11 @@ Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d u
 	/**
 	 * TODO: implement the Jacobian Ft
 	 */
+	double theta = state(2);
+
+    	Ft(0, 0) = dt * cos(theta);
+    	Ft(1, 0) = dt * sin(theta);
+    	Ft(2, 1) = dt;
 	return Ft;
 }
 
