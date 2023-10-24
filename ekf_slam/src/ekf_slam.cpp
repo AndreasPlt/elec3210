@@ -127,24 +127,23 @@ Eigen::MatrixXd EKFSLAM::jacobB(const Eigen::VectorXd& state, Eigen::Vector2d ut
 	return B;
 }
 
-Eigen::MatrixXd EKFSLAM:calc_H(const Eigen::Vector2d& pt){
+Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
     Eigen::MatrixXd H = Eigen::MatrixXd::Zero(2, 5);
-    Eigen::Vector2d delta = pt - z<2, 1>(idx * 2, 0);
-    H(0, 0) = -delta.norm() * pt.x;
-    H(0, 1) = -delta.norm() * pt.y;
+    H(0, 0) = -delta.norm() * delta(0);
+    H(0, 1) = -delta.norm() * delta(1);
     H(0, 2) = 0;
     H(0, 3) = -H(0,0);
     H(0, 4) = -H(0,1);
-    H(1, 0) = pt.y;
-    H(1, 1) = -pt.x;
+    H(1, 0) = delta(1);
+    H(1, 1) = -delta(0);
     H(1, 2) = -delta.norm()*delta.norm();
     H(1, 3) = -H(1,0);
     H(1, 4) = -H(1,1);
-    return H * calc_F(state, idx);
+    return H;
 }
 
-Eigen::MatrixXd EKFSLAM::calc_F(const Eigen::VectorXd& state, int idx){
-    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, state.rows()-3);
+Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
+    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows-3);
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
     F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
     return F;
@@ -209,13 +208,13 @@ void EKFSLAM::updateMeasurement(){
     int num_obs = cylinderPoints.rows(); // number of observations
     Eigen::VectorXi indices = Eigen::VectorXi::Ones(num_obs) * -1; // indices of landmarks in the state vector
     for (int i = 0; i < num_obs; ++i) {
+        // get current coordinates in world frame
+        Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
         //start with naive correspondence: search the nearest neighbor for every observation
         // if we already mapped an observation for every landmark, the rest of the observations are new
         if(i < num_landmarks){
-            // get current coordinates in world frame
-            Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
-            min_idx = -1;
-            min_dist = 99999;
+            int min_idx = -1;
+            int min_dist = 99999;
             // naive n^2 complexity
             for(int j = 0; j < num_landmarks; ++j){
                 Eigen::Vector2d landmark = mState.block<2, 1>(3 + j * 2, 0);
@@ -249,9 +248,9 @@ void EKFSLAM::updateMeasurement(){
         if (idx == -1 || idx + 1 > num_landmarks) continue;
         const Eigen::Vector2d& landmark = mState.block<2, 1>(3 + idx * 2, 0);
 		// Implement the measurement update here, i.e., update the state vector and covariance matrix
-        Eigen::MatrixXd H = calc_H(z, idx, cylinderPoints.row(i).transpose());
+        Eigen::MatrixXd H = calc_H(cylinderPoints.row(i).transpose()) * calc_F(cylinderPoints.rows(), idx);
         Eigen::MatrixXd K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
-        mState = mState + K * (z - calc_z(mState, idx));
+        mState = mState + K * (landmark - z.block<2,1>(2 * i, 0));
         mCov = (Eigen::MatrixXd::Identity(mState.rows(), mState.rows()) - K * H) * mCov;
     }
 }
