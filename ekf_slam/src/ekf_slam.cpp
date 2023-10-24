@@ -34,9 +34,9 @@ EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
 	 * TODO: initialize the state vector and covariance matrix
 	 */
     mState = Eigen::VectorXd::Zero(3); // x, y, yaw
-    mCov = Eigen::MatrixXd::Zero(1, 1);
-    R = Eigen::Matrix; // process noise
-    Q = Q; // measurement noise
+    mCov = Eigen::MatrixXd::Zero(3, 3);
+    R = 0.1 * Eigen::MatrixXd::Identity(3, 3); // process noise
+    Q = 0.1* Eigen::MatrixXd::Identity(2, 2); // measurement nosie
 
     std::cout << "EKF SLAM initialized" << std::endl;
 }
@@ -182,6 +182,11 @@ void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& I
     new_cov.block(0, 0, state_size, state_size) = mCov;
     new_cov.block(state_size, state_size, 2, 2) = InitCov;
     mCov = new_cov;
+
+    Eigen::MatrixXd new_process_noise = Eigen::MatrixXd::Zero(state_size + 2, state_size + 2);
+    new_process_noise.block(0, 0, state_size, state_size) = R;
+    new_process_noise.block(state_size, state_size, 2, 2) = 1;
+    R = new_process_noise;
 }
 
 void EKFSLAM::accumulateMap(){
