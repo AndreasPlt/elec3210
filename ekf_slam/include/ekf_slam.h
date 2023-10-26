@@ -78,6 +78,22 @@ public:
     void publishMsg();
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg);
+    
+    // getters/setters for testing
+    Eigen::VectorXd getState() { return mState; }
+    Eigen::MatrixXd getCov() { return mCov; }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getMapCloud() { return mapCloud; }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getLaserCloudIn() { return laserCloudIn; }
+    Eigen::Matrix4d getTwb() { return Twb; }
+    Eigen::MatrixXd getR() { return R; }
+    Eigen::MatrixXd getQ() { return Q; }
 
+    void setState(Eigen::VectorXd& state) { mState = state; }
+    void setCov(Eigen::MatrixXd& cov) { mCov = cov; }
+    void setMapCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& mapCloud) { this->mapCloud = mapCloud; }
+    void setLaserCloudIn(pcl::PointCloud<pcl::PointXYZ>::Ptr& laserCloudIn) { this->laserCloudIn = laserCloudIn; }  
+    void setTwb(Eigen::Matrix4d& Twb) { this->Twb = Twb; }
+    void setR(Eigen::MatrixXd& R) { this->R = R; }
+    void setQ(Eigen::MatrixXd& Q) { this->Q = Q; }
 };
 #endif
