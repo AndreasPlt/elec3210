@@ -239,6 +239,8 @@ void EKFSLAM::updateMeasurement(){
                     min_idx = j;
                 }
             }
+            std::cout << "min_dist: " << min_dist << std::endl;
+            std::cout << "min_idx: " << min_idx << std::endl;
             indices(i) = min_idx;
         }
         if (indices(i) == -1){
