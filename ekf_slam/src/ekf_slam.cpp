@@ -123,10 +123,9 @@ Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d u
 	 * TODO: implement the Jacobian Ft
 	 */
 	double theta = state(2);
-
-    	Ft(0, 0) = dt * cos(theta);
-    	Ft(1, 0) = dt * sin(theta);
-    	Ft(2, 1) = dt;
+    Ft(0, 0) = dt * cos(theta);
+    Ft(1, 0) = dt * sin(theta);
+    Ft(2, 1) = dt;
 	return Ft;
 }
 
@@ -166,7 +165,7 @@ void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::
 	state = state + jacobB(state, ut, dt) * ut; // update state
 	Eigen::MatrixXd Gt = jacobGt(state, ut, dt);
 	Eigen::MatrixXd Ft = jacobFt(state, ut, dt);
-//	cov = Gt * cov * Gt.transpose() + Ft * R * Ft.transpose(); // update covariance
+    cov = Gt * cov * Gt.transpose() + Ft * R * Ft.transpose(); // update covariance
 }
 
 Eigen::Vector2d EKFSLAM::transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x){
@@ -178,10 +177,6 @@ Eigen::Vector2d EKFSLAM::transform(const Eigen::Vector2d& p, const Eigen::Vector
 
 void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& InitCov){
 	// add new landmark to mState and mCov
-	/**
-	 * TODO: implement the function
-	 */
-
     int state_size = mState.rows();
 
     // add new landmark to state vector and covariance matrix
