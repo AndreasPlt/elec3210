@@ -82,7 +82,7 @@ public:
 
     Eigen::MatrixXd calc_H(const Eigen::Vector2d& delta);
 
-    Eigen::MatrixXd calc_F(int rows, int idx);
+    Eigen::MatrixXd calc_F(int idx);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg);
 
