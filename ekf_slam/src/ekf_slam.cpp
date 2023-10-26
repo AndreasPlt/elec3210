@@ -151,7 +151,7 @@ Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
     H(1, 2) = -delta.norm()*delta.norm();
     H(1, 3) = -H(1,0);
     H(1, 4) = -H(1,1);
-    return H;
+    return (1/delta.norm()*delta.norm())*H;
 }
 
 Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
