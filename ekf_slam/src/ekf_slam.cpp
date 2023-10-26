@@ -35,8 +35,8 @@ EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
 	 */
     mState = Eigen::VectorXd::Zero(3); // x, y, yaw
     mCov = Eigen::MatrixXd::Zero(3, 3);
-    R = 0.1 * Eigen::MatrixXd::Identity(3, 3); // process noise
-    Q = 0.1* Eigen::MatrixXd::Identity(2, 2); // measurement nosie
+    R = PROCESS_NOISE * Eigen::MatrixXd::Identity(3, 3); // process noise
+    Q = MEASUREMENT_NOISE * Eigen::MatrixXd::Identity(2, 2); // measurement nosie
 
     std::cout << "EKF SLAM initialized" << std::endl;
 }
@@ -156,7 +156,11 @@ Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
 
 Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
     Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows-3);
+    assert(rows >= 6);
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+    assert(idx >= 0);
+    assert(idx < rows);
+    assert(idx * 2 + 1 < rows - 3);
     F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
     return F;
 }
@@ -184,6 +188,7 @@ void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& I
 
     int state_size = mState.rows();
 
+    // add new landmark to state vector and covariance matrix
     Eigen::VectorXd new_state = Eigen::VectorXd::Zero(state_size + 2);
     new_state.segment(0, state_size) = mState;
     new_state.segment(state_size, 2) = lm;
@@ -194,10 +199,8 @@ void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& I
     new_cov.block(state_size, state_size, 2, 2) = InitCov;
     mCov = new_cov;
 
-    Eigen::MatrixXd new_process_noise = Eigen::MatrixXd::Zero(state_size + 2, state_size + 2);
-    new_process_noise.block(0, 0, state_size, state_size) = R;
-    new_process_noise.block(state_size, state_size, 2, 2) = 1;
-    R = new_process_noise;
+    // update process noise
+    R = PROCESS_NOISE * Eigen::MatrixXd::Identity(state_size + 2, state_size + 2);
 }
 
 void EKFSLAM::accumulateMap(){
@@ -215,6 +218,7 @@ void EKFSLAM::accumulateMap(){
 
 void EKFSLAM::updateMeasurement(){
     cylinderPoints = extractCylinder->extract(laserCloudIn, cloudHeader); // 2D pole centers in the laser/body frame
+    assert(mState.rows() >= 3);
     Eigen::Vector3d xwb = mState.block<3, 1>(0, 0); // pose in the world frame
     int num_landmarks = (mState.rows() - 3) / 2; // number of landmarks in the state vector
     int num_obs = cylinderPoints.rows(); // number of observations
@@ -229,6 +233,8 @@ void EKFSLAM::updateMeasurement(){
             int min_dist = 99999;
             // naive n^2 complexity
             for(int j = 0; j < num_landmarks; ++j){
+                assert(3 + j * 2 < mState.rows());
+                assert(3 + j * 2 + 1 < mState.rows());
                 Eigen::Vector2d landmark = mState.block<2, 1>(3 + j * 2, 0);
                 // calc euclidean distance between the points
                 double dist = (pt_transformed - landmark).norm();
@@ -258,11 +264,15 @@ void EKFSLAM::updateMeasurement(){
     for (int i = 0; i < num_obs; ++i) {
         int idx = indices(i);
         if (idx == -1 || idx + 1 > num_landmarks) continue;
+        assert(3 + idx * 2 < mState.rows());
+        assert(3 + idx * 2 + 1 < mState.rows());
         const Eigen::Vector2d& landmark = mState.block<2, 1>(3 + idx * 2, 0);
 		// Implement the measurement update here, i.e., update the state vector and covariance matrix
         Eigen::MatrixXd H = calc_H(cylinderPoints.row(i).transpose()) * calc_F(cylinderPoints.rows(), idx);
         Eigen::MatrixXd K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
-        mState = mState + K * (landmark - z.block<2,1>(2 * i, 0));
+        assert(2 * i < z.rows());
+        assert(2 * i + 1 < z.rows());
+        mState = mState + K * (landmark - z.block<2, 1>(2 * i, 0));
         mCov = (Eigen::MatrixXd::Identity(mState.rows(), mState.rows()) - K * H) * mCov;
     }
 }

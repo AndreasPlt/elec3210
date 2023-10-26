@@ -39,6 +39,9 @@ private:
     std::shared_ptr<ExtractCylinder> extractCylinder;
     Eigen::MatrixX2d cylinderPoints;
 
+    double PROCESS_NOISE = 0.1;
+    double MEASUREMENT_NOISE = 0.1;
+
     int globalId = -1;
 
     TicToc timer, map_pub_timer;
@@ -82,7 +85,7 @@ public:
     Eigen::MatrixXd calc_F(int rows, int idx);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg);
-    
+
     // getters/setters for testing
     Eigen::VectorXd getState() { return mState; }
     Eigen::MatrixXd getCov() { return mCov; }
