@@ -155,8 +155,7 @@ Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
 }
 
 Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
-    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows-3);
-    assert(rows >= 6);
+    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows);
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
     assert(idx >= 0);
     assert(idx < rows);
