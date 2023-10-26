@@ -158,8 +158,7 @@ Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
     Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows);
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
     assert(idx >= 0);
-    assert(idx < rows);
-    assert(idx * 2 + 1 < rows - 3);
+    assert(idx * 2 + 1 < rows);
     F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
     return F;
 }
