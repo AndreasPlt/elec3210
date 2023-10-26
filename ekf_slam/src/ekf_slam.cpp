@@ -154,11 +154,9 @@ Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
     return (1/delta.norm()*delta.norm())*H;
 }
 
-Eigen::MatrixXd EKFSLAM::calc_F(int rows, int idx){
-    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, rows);
+Eigen::MatrixXd EKFSLAM::calc_F(int idx){
+    Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, mState.rows());
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-    assert(idx >= 0);
-    assert(idx * 2 + 1 < rows);
     F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
     return F;
 }
@@ -266,7 +264,15 @@ void EKFSLAM::updateMeasurement(){
         assert(3 + idx * 2 + 1 < mState.rows());
         const Eigen::Vector2d& landmark = mState.block<2, 1>(3 + idx * 2, 0);
 		// Implement the measurement update here, i.e., update the state vector and covariance matrix
-        Eigen::MatrixXd H = calc_H(cylinderPoints.row(i).transpose()) * calc_F(cylinderPoints.rows(), idx);
+        Eigen::MatrixXd calced_H = calc_H(cylinderPoints.row(i).transpose());
+        Eigen::MatrixXd calced_F = calc_F(idx);
+        // print shapes
+        std::cout << "H: " << calced_H.rows() << "x" << calced_H.cols() << std::endl;
+        std::cout << "F: " << calced_F.rows() << "x" << calced_F.cols() << std::endl;
+        Eigen::MatrixXd H = calc_H(cylinderPoints.row(i).transpose()) * calc_F(idx);
+        std::cout << "New H: " << H.rows() << "x" << H.cols() << std::endl;
+        std::cout << "mCov: " << mCov.rows() << "x" << mCov.cols() << std::endl;
+        std::cout << "Q" << Q.rows() << "x" << Q.cols() << std::endl;
         Eigen::MatrixXd K = mCov * H.transpose() * (H * mCov * H.transpose() + Q).inverse();
         assert(2 * i < z.rows());
         assert(2 * i + 1 < z.rows());
