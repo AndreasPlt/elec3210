@@ -1,4 +1,4 @@
-#include "ekf_slam.h"
+#include "ekf_slam_backup.h"
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/filters/filter.h>
@@ -10,14 +10,14 @@ using namespace std;
 using namespace Eigen;
 
 
-EKFSLAM::~EKFSLAM() {}
+EKFSLAM_BACKUP::~EKFSLAM_BACKUP() {}
 
-EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
+EKFSLAM_BACKUP::EKFSLAM_BACKUP(ros::NodeHandle &nh):
         nh_(nh) {
 
 //    initialize ros publisher
-    lidar_sub = nh_.subscribe("/velodyne_points", 1, &EKFSLAM::cloudHandler, this);
-    odom_sub = nh_.subscribe("/odom", 1, &EKFSLAM::odomHandler, this);
+    lidar_sub = nh_.subscribe("/velodyne_points", 1, &EKFSLAM_BACKUP::cloudHandler, this);
+    odom_sub = nh_.subscribe("/odom", 1, &EKFSLAM_BACKUP::odomHandler, this);
     map_cylinder_pub = nh_.advertise<visualization_msgs::MarkerArray>("/map_cylinder", 1);
     obs_cylinder_pub = nh_.advertise<visualization_msgs::MarkerArray>("/obs_cylinder", 1);
     odom_pub = nh_.advertise<nav_msgs::Odometry>("ekf_odom", 1000);
@@ -41,7 +41,7 @@ EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
     std::cout << "EKF SLAM initialized" << std::endl;
 }
 
-void EKFSLAM::run() {
+void EKFSLAM_BACKUP::run() {
     ros::Rate rate(1000);
     while (ros::ok()){
         if (cloudQueue.empty() || odomQueue.empty()){
@@ -95,7 +95,7 @@ void EKFSLAM::run() {
     }
 }
 
-double EKFSLAM::normalizeAngle(double angle){
+double EKFSLAM_BACKUP::normalizeAngle(double angle){
 	if (angle > M_PI){
 		angle -= 2 * M_PI;
 	} else if (angle < -M_PI){
@@ -104,7 +104,7 @@ double EKFSLAM::normalizeAngle(double angle){
 	return angle;
 }
 
-Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
+Eigen::MatrixXd EKFSLAM_BACKUP::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
 	int num_state = state.rows();
 	Eigen::MatrixXd Gt = Eigen::MatrixXd::Identity(num_state, num_state);
 	double vx = ut(0);
@@ -116,7 +116,7 @@ Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d u
 	return Gt;
 }
 
-Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
+Eigen::MatrixXd EKFSLAM_BACKUP::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
 	int num_state = state.rows();
 	Eigen::MatrixXd Ft = Eigen::MatrixXd::Zero(num_state, 2);
 	/**
@@ -129,7 +129,7 @@ Eigen::MatrixXd EKFSLAM::jacobFt(const Eigen::VectorXd& state, Eigen::Vector2d u
 	return Ft;
 }
 
-Eigen::MatrixXd EKFSLAM::jacobB(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
+Eigen::MatrixXd EKFSLAM_BACKUP::jacobB(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
 	int num_state = state.rows();
 	Eigen::MatrixXd B = Eigen::MatrixXd::Zero(num_state, 2);
 	B(0, 0) = dt * cos(state(2));
@@ -138,7 +138,7 @@ Eigen::MatrixXd EKFSLAM::jacobB(const Eigen::VectorXd& state, Eigen::Vector2d ut
 	return B;
 }
 
-Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
+Eigen::MatrixXd EKFSLAM_BACKUP::calc_H(const Eigen::Vector2d& delta){
     Eigen::MatrixXd H = Eigen::MatrixXd::Zero(2, 5);
     H(0, 0) = -delta.norm() * delta(0);
     H(0, 1) = -delta.norm() * delta(1);
@@ -153,14 +153,14 @@ Eigen::MatrixXd EKFSLAM::calc_H(const Eigen::Vector2d& delta){
     return (1/delta.norm()*delta.norm())*H;
 }
 
-Eigen::MatrixXd EKFSLAM::calc_F(int idx){
+Eigen::MatrixXd EKFSLAM_BACKUP::calc_F(int idx){
     Eigen::MatrixXd F = Eigen::MatrixXd::Zero(5, mState.rows());
     F.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
     F.block<2, 2>(3, idx*2) = Eigen::Matrix2d::Identity();
     return F;
 }
 
-void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::Vector2d ut, double dt){
+void EKFSLAM_BACKUP::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::Vector2d ut, double dt){
 	// Note: ut = [v, w]
 	state = state + jacobB(state, ut, dt) * ut; // update state
 	Eigen::MatrixXd Gt = jacobGt(state, ut, dt);
@@ -168,14 +168,14 @@ void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::
     cov = Gt * cov * Gt.transpose() + Ft * R * Ft.transpose(); // update covariance
 }
 
-Eigen::Vector2d EKFSLAM::transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x){
+Eigen::Vector2d EKFSLAM_BACKUP::transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x){
 	Eigen::Vector2d p_t;
 	p_t(0) = p(0) * cos(x(2)) - p(1) * sin(x(2)) + x(0);
 	p_t(1) = p(0) * sin(x(2)) + p(1) * cos(x(2)) + x(1);
 	return p_t;
 }
 
-void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& InitCov){
+void EKFSLAM_BACKUP::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& InitCov){
 	// add new landmark to mState and mCov
     int state_size = mState.rows();
 
@@ -194,7 +194,7 @@ void EKFSLAM::addNewLandmark(const Eigen::Vector2d& lm, const Eigen::MatrixXd& I
     R = PROCESS_NOISE * Eigen::MatrixXd::Identity(state_size + 2, state_size + 2);
 }
 
-void EKFSLAM::accumulateMap(){
+void EKFSLAM_BACKUP::accumulateMap(){
 
     Eigen::Matrix4d Twb = Pose3DTo6D(mState.segment(0, 3));
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformedCloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -207,7 +207,7 @@ void EKFSLAM::accumulateMap(){
     voxelSampler.filter(*mapCloud);
 }
 
-void EKFSLAM::updateMeasurement(){
+void EKFSLAM_BACKUP::updateMeasurement(){
     cylinderPoints = extractCylinder->extract(laserCloudIn, cloudHeader); // 2D pole centers in the laser/body frame
     assert(mState.rows() >= 3);
     Eigen::Vector3d xwb = mState.block<3, 1>(0, 0); // pose in the world frame
@@ -217,7 +217,7 @@ void EKFSLAM::updateMeasurement(){
     for (int i = 0; i < num_obs; ++i) {
         // get current coordinates in world frame
         Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
-        //start with naive correspondence: search the nearest neighbor for every observation
+        // start with naive correspondence: search the nearest neighbor for every observation
         // if we already mapped an observation for every landmark, the rest of the observations are new
         if(i < num_landmarks){
             int min_idx = -1;
@@ -276,7 +276,7 @@ void EKFSLAM::updateMeasurement(){
     }
 }
 
-void EKFSLAM::publishMsg(){
+void EKFSLAM_BACKUP::publishMsg(){
     // publish map cylinder
     visualization_msgs::MarkerArray markerArray;
     int num_landmarks = (mState.rows() - 3) / 2;
@@ -383,21 +383,21 @@ void EKFSLAM::publishMsg(){
 						  << ", map_pub: " << map_pub_timer.duration_ms() << " ms" << std::endl;
 }
 
-void EKFSLAM::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
+void EKFSLAM_BACKUP::cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
     cloudQueueMutex.lock();
     std_msgs::Header cloudHeader = laserCloudMsg->header;
     cloudQueue.push(std::make_pair(cloudHeader, laserCloudMsg));
     cloudQueueMutex.unlock();
 }
 
-void EKFSLAM::odomHandler(const nav_msgs::OdometryConstPtr& odomMsg){
+void EKFSLAM_BACKUP::odomHandler(const nav_msgs::OdometryConstPtr& odomMsg){
     odomMutex.lock();
     std_msgs::Header odomHeader = odomMsg->header;
     odomQueue.push(std::make_pair(odomHeader, odomMsg));
     odomMutex.unlock();
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr EKFSLAM::parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
+pcl::PointCloud<pcl::PointXYZ>::Ptr EKFSLAM_BACKUP::parseCloud(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloudTmp(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*laserCloudMsg, *cloudTmp);
     // Remove Nan points

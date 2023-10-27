@@ -17,7 +17,7 @@
 #include "extract_cylinder.h"
 #include "utils.h"
 
-class EKFSLAM {
+class EKFSLAM_BACKUP {
 
 private:
     ros::NodeHandle &nh_;
@@ -50,9 +50,9 @@ private:
 
 public:
 
-    EKFSLAM(ros::NodeHandle &n);
+    EKFSLAM_BACKUP(ros::NodeHandle &n);
 
-    ~EKFSLAM();
+    ~EKFSLAM_BACKUP();
 
     void run();
 
