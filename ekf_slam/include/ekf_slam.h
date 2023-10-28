@@ -41,6 +41,7 @@ private:
 
     double PROCESS_NOISE = 0.1;
     double MEASUREMENT_NOISE = 0.1;
+    double DATA_ASSOCIATION_THRESHOLD = 20000;
 
     int globalId = -1;
 
@@ -69,6 +70,8 @@ public:
     Eigen::Vector2d transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x);
 
     void accumulateMap();
+
+    Eigen::VectorXi associateObservations();
 
     void updateMeasurement();
 
