@@ -102,7 +102,7 @@ void EKFSLAM::run() {
 }
 
 double EKFSLAM::normalizeAngle(double angle){
-    return remainder(angle, 2 * M_PI);
+    //return remainder(angle, 2 * M_PI);
 	if (angle > M_PI){
 		angle -= 2 * M_PI;
 	} else if (angle < -M_PI){
@@ -197,8 +197,9 @@ void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::
     
 	mState = mState + Bt * ut; // update state
     mState(2) = normalizeAngle(mState(2));
-    
+    std::cout << mState(2) << std::endl;
     mCov = Gt * mCov * Gt.transpose() + Ft * R * Ft.transpose(); // update covariance
+    std::cout << mCov << std::endl;
 }
 
 Eigen::Vector2d EKFSLAM::transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x){
@@ -264,6 +265,7 @@ Eigen::VectorXi EKFSLAM::associateObservations() {
                 min_idx = i;
             }
         }
+        // The solution has to be more optimal!!!
         // if the closest observation is closer than the threshold, we assume that the observation is the same landmark
         if (min_dist < DATA_ASSOCIATION_THRESHOLD && min_idx != -1) {
             indices(min_idx) = j;

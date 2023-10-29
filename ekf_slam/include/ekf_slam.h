@@ -41,7 +41,7 @@ private:
 
     double PROCESS_NOISE = 0.1;
     double MEASUREMENT_NOISE = 0.1;
-    double DATA_ASSOCIATION_THRESHOLD = 2;
+    double DATA_ASSOCIATION_THRESHOLD = 1.5;
 
     int globalId = -1;
 
