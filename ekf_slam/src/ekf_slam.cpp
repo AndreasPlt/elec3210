@@ -84,10 +84,10 @@ void EKFSLAM::run() {
 		// Extended Kalman Filter
 		// 1. predict
         predictState(mState, mCov, ut, dt);
-        std::cout << "Covariance after prediction: " << std::endl << mCov << std::endl;
+        //std::cout << "Covariance after prediction: " << std::endl << mCov << std::endl;
 		// 2. update
         updateMeasurement();
-        std::cout << "Covariance after update: " << std::endl << mCov << std::endl;
+        //std::cout << "Covariance after update: " << std::endl << mCov << std::endl;
         std::cout << "---" << std::endl;
 		timer.toc();
 
@@ -112,14 +112,28 @@ double EKFSLAM::normalizeAngle(double angle){
 }
 
 Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d ut, double dt){
-	int num_state = state.rows();
+    int num_state = state.rows();
 	Eigen::MatrixXd Gt = Eigen::MatrixXd::Identity(num_state, num_state);
 	double vx = ut(0);
+    double omega_z = ut(1);
     double theta = state(2);
 
-    // Calculate the elements of Gt
+    // assignment implementation
+    /*
     Gt(0, 2) = -vx * sin(theta);
     Gt(1, 2) = vx * cos(theta); 
+    */
+    // slides implementation
+    std::cout << "vx: " << vx << std::endl;
+    std::cout << "omega_z: " << omega_z << std::endl;
+    std::cout << "theta: " << theta << std::endl;
+    Eigen::Matrix3Xd Fx = Eigen::Matrix3Xd::Zero(3, num_state);
+    Fx.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
+    Eigen::Matrix3d Gt_3d = Eigen::Matrix3d::Zero();
+    Gt_3d(0, 2) = -vx/omega_z * cos(theta) + vx/omega_z * cos(theta + omega_z * dt);
+    Gt_3d(1, 2) = -vx/omega_z * sin(theta) + vx/omega_z * sin(theta + omega_z * dt);
+    Gt += Fx.transpose() * Gt_3d * Fx;
+
 	return Gt;
 }
 
