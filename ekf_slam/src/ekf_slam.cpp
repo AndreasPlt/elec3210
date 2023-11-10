@@ -35,9 +35,9 @@ EKFSLAM::EKFSLAM(ros::NodeHandle &nh):
 	 */
     mState = Eigen::VectorXd::Zero(3); // x, y, yaw
     mCov = Eigen::MatrixXd::Zero(3, 3);
-    R = 0.1 * Eigen::MatrixXd::Identity(3, 3); // process noise
+    R = 0.01 * Eigen::MatrixXd::Identity(3, 3); // process noise
     Q = Eigen::MatrixXd::Zero(2, 2); // measurement nosie
-    Q << 0.1, 0, 0, 0.1;
+    Q << 0.01, 0, 0, 0.01;
 
     std::cout << "EKF SLAM initialized" << std::endl;
 }
@@ -213,29 +213,40 @@ void EKFSLAM::updateMeasurement(){
     int num_obs = cylinderPoints.rows(); // number of observations
     Eigen::VectorXi indices = Eigen::VectorXi::Ones(num_obs) * -1; // indices of landmarks in the state vector
     
-    for (int i = 0; i < num_obs; ++i) {
+    std::vector<int> observations(num_obs); // indices of observations that not already mapped
+    std::iota(observations.begin(), observations.end(), 0); // fill with 0, 1, 2, ..., num_obs - 1
+    
+    // iterate through all landmarks
+    for (int j = 0; j < num_landmarks; ++j) {
         // get current coordinates in world frame
-        Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
-		if(i < num_landmarks){
-            int min_idx = -1;
-            int min_dist = 99999;
-            // naive n^2 complexity
-            for(int j = 0; j < num_landmarks; ++j){
-                Eigen::Vector2d landmark = mState.block<2, 1>(3 + j * 2, 0);
-                // calc euclidean distance between the points
-                double dist = (pt_transformed - landmark).norm();
-                if(dist < min_dist){
-                    min_dist = dist;
-                    min_idx = j;
-                }
+        Eigen::Vector2d landmark = mState.block<2, 1>(3 + j * 2, 0);
+        int min_idx = -1;
+        double min_dist = 99999;
+        // iterate through all observations
+        for (int i = 0; i < num_obs; ++i) {
+            // get current coordinates in world frame
+            Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
+            // calc euclidean distance between the points
+            double dist = (pt_transformed - landmark).norm();
+            if (dist < min_dist) {
+                min_dist = dist;
+                min_idx = i;
             }
-            indices(i) = min_idx;
+        }
+        // if the closest observation is closer than the threshold, we assume that the observation is the same landmark
+        if (min_dist < DATA_ASSOCIATION_THRESHOLD && min_idx != -1) {
+            indices(min_idx) = j;
+            observations.erase(
+                std::remove(observations.begin(), observations.end(), min_idx), 
+                observations.end());
         }
     }
 
     for (int i = 0; i < num_obs; ++i) {
+        
         if (indices(i) == -1){
             indices(i) = ++globalId;
+            Eigen::Vector2d pt_transformed = transform(cylinderPoints.row(i).transpose(), xwb);
             addNewLandmark(pt_transformed, Q);
         }
     }
@@ -395,7 +406,7 @@ void EKFSLAM::publishMsg(){
     scan_pub.publish(laserMsg);
 
 	map_pub_timer.toc();
-    std::cout << "x: " << mState(0,0) << " y: " << mState(1,0) << " theta: " << mState(2,0) * 180 / M_PI << ", time ekf: " << timer.duration_ms() << " ms"
+    std::cout << "x: " << mState(0,0) << " y: " << mState(1,0) << " theta: " << mState(2,0) * 180 / M_PI << " obs/landmarks: " << num_obs << "/" << num_landmarks << ", time ekf: " << timer.duration_ms() << " ms"
 						  << ", map_pub: " << map_pub_timer.duration_ms() << " ms" << std::endl;
 }
 
