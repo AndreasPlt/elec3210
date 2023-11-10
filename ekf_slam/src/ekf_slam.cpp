@@ -231,11 +231,15 @@ void EKFSLAM::updateMeasurement(){
             }
             indices(i) = min_idx;
         }
+    }
+
+    for (int i = 0; i < num_obs; ++i) {
         if (indices(i) == -1){
             indices(i) = ++globalId;
             addNewLandmark(pt_transformed, Q);
         }
     }
+
     // simulating bearing model
     Eigen::VectorXd z = Eigen::VectorXd::Zero(2 * num_obs);
     for (int i = 0; i < num_obs; ++i) {
