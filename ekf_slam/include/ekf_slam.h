@@ -39,8 +39,8 @@ private:
     std::shared_ptr<ExtractCylinder> extractCylinder;
     Eigen::MatrixX2d cylinderPoints;
 
-    double PROCESS_NOISE = 0.1;
-    double MEASUREMENT_NOISE = 0.1;
+    double PROCESS_NOISE = 1;
+    double MEASUREMENT_NOISE = 1;
     double DATA_ASSOCIATION_THRESHOLD = 1.5;
 
     int globalId = -1;
