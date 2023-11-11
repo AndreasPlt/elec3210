@@ -261,7 +261,7 @@ void EKFSLAM::updateMeasurement(){
     for (int i = 0; i < num_obs; ++i) {
         const Eigen::Vector2d& pt = cylinderPoints.row(i);
         z(2 * i, 0) = pt.norm();
-        z(2 * i + 1, 0) = atan2(pt(1), pt(0));
+        z(2 * i + 1, 0) = atan2(pt(1), pt(0)) ;
     }
     // update the measurement vector
     num_landmarks = (mState.rows() - 3) / 2;
