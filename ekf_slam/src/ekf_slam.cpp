@@ -154,6 +154,7 @@ void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::
     state_change(2) = w * dt;
     // print dimensions
     mState = state + Fx.transpose() * state_change;
+    mState(2,0) = normalizeAngle(mState(2,0));
     double new_theta = state(2, 0);
     if (abs(new_theta - theta) > 0.8){
         std::cout << "[UPDATE] theta increase!" << std::endl;
