@@ -153,13 +153,17 @@ void EKFSLAM::predictState(Eigen::VectorXd& state, Eigen::MatrixXd& cov, Eigen::
     state_change(1) = v/w * cos(theta) - v/w * cos(theta + w * dt);
     state_change(2) = w * dt;
     // print dimensions
-    state = state + Fx.transpose() * state_change;
+    mState = state + Fx.transpose() * state_change;
+    double new_theta = state(2, 0);
+    if (abs(new_theta - theta) > 0.8){
+        std::cout << "[UPDATE] theta increase!" << std::endl;
+    }
 
     // update covariance
     // print dimensions
 	Eigen::MatrixXd Gt = Eigen::MatrixXd::Identity(num_state, num_state) + Fx.transpose() * jacobGxt(state, ut, dt) * Fx;
     Eigen::Matrix3d Rx = R.block(0, 0, 3, 3);
-    cov = Gt * cov * Gt.transpose() + Fx.transpose() * Rx * Fx; // update covariance
+    mCov = Gt * cov * Gt.transpose() + Fx.transpose() * Rx * Fx; // update covariance
 }
 
 Eigen::Vector2d EKFSLAM::transform(const Eigen::Vector2d& p, const Eigen::Vector3d& x){
@@ -297,6 +301,10 @@ void EKFSLAM::updateMeasurement(){
         // update state
         Eigen::Vector2d z_diff = z.block<2, 1>(2 * i, 0) - z_hat;
         mState += K * z_diff;
+        double new_theta = mState(2, 0);
+        if (abs(new_theta - state_theta) > 0.8){
+            std::cout << "[UPDATE] theta increase!" << std::endl;
+        }
 
         // update covariance
         mCov = (Eigen::MatrixXd::Identity(mState.rows(), mState.rows()) - K * H) * mCov;

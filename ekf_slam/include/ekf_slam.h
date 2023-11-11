@@ -39,6 +39,8 @@ private:
     std::shared_ptr<ExtractCylinder> extractCylinder;
     Eigen::MatrixX2d cylinderPoints;
 
+    double DATA_ASSOCIATION_THRESHOLD = 0.5;
+
     int globalId = -1;
 
     TicToc timer, map_pub_timer;
