@@ -130,8 +130,10 @@ Eigen::MatrixXd EKFSLAM::jacobGt(const Eigen::VectorXd& state, Eigen::Vector2d u
     Eigen::Matrix3Xd Fx = Eigen::Matrix3Xd::Zero(3, num_state);
     Fx.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d Gt_3d = Eigen::Matrix3d::Zero();
-    Gt_3d(0, 2) = -vx/omega_z * cos(theta) + vx/omega_z * cos(theta + omega_z * dt);
-    Gt_3d(1, 2) = -vx/omega_z * sin(theta) + vx/omega_z * sin(theta + omega_z * dt);
+    //Gt_3d(0, 2) = -vx/omega_z * cos(theta) + vx/omega_z * cos(theta + omega_z * dt);
+    //Gt_3d(1, 2) = -vx/omega_z * sin(theta) + vx/omega_z * sin(theta + omega_z * dt);
+    Gt_3d(0, 2) = -vx * sin(theta) ;
+    Gt_3d(1, 2) = vx * cos(theta);
     Gt += Fx.transpose() * Gt_3d * Fx;
 
 	return Gt;
